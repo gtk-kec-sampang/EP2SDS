@@ -1501,17 +1501,6 @@
         .upload-progress .bar-fill { height: 100%; background: linear-gradient(90deg, #27ae60, #2ecc71); transition: width 0.3s; }
         .upload-progress .info { font-size: 0.7rem; color: #666; margin-top: 4px; }
 
-        .hidden-trigger {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            width: 30px;
-            height: 30px;
-            opacity: 0;
-            cursor: default;
-            z-index: 50;
-        }
-
         .loading-overlay {
             display: none;
             position: fixed;
@@ -1591,7 +1580,7 @@
     <div class="public-container">
         <div class="live-indicator">
             <span class="live-dot"></span>
-            <span>Data diperbarui otomatis setiap 30 menit</span>
+            <span>Data diperbarui otomatis setiap 5 menit</span>
         </div>
 
         <div id="publicDashboard"></div>
@@ -1666,13 +1655,13 @@
             <p id="topbarSubtitle">77 Lembaga • Kab. Sampang</p>
         </div>
         <div class="topbar-right">
-            <div class="connection-status disconnected" id="connectionStatus">
+            <div class="connection-status connected" id="connectionStatus">
                 <span class="status-dot"></span>
-                <span id="connectionText">Belum Terhubung</span>
+                <span id="connectionText">Terhubung</span>
             </div>
-            <div class="auto-refresh-badge" id="autoRefreshBadge" title="Auto-refresh aktif setiap 30 menit">
+            <div class="auto-refresh-badge" id="autoRefreshBadge" title="Auto-refresh aktif setiap 05 menit">
                 <span>⏰</span>
-                <span id="refreshCountdown">30:00</span>
+                <span id="refreshCountdown">05:00</span>
             </div>
             <div class="sync-status-badge" id="syncStatusBadge" title="Status sinkronisasi dengan server">
                 <span id="syncIcon">☁️</span>
@@ -1770,46 +1759,6 @@
     </div>
 </div>
 
-<!-- MODAL CONFIG -->
-<div class="modal-overlay" id="configModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3>⚙️ Konfigurasi Google Drive (Admin Only)</h3>
-            <button class="modal-close" onclick="closeModal('configModal')">×</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label>Apps Script Web App URL</label>
-                <input type="text" id="configUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
-                <div class="help">URL dari deploy Apps Script sebagai Web App (kosongkan untuk default)</div>
-            </div>
-            <div class="form-group">
-                <label>Folder ID Google Drive (Opsional)</label>
-                <input type="text" id="configFolderId" placeholder="Kosongkan untuk auto-create">
-            </div>
-            <div class="form-group">
-                <label>Spreadsheet ID (Opsional)</label>
-                <input type="text" id="configSpreadsheetId" placeholder="Kosongkan untuk auto-create">
-            </div>
-            <div class="form-group">
-                <label>Max Ukuran File (MB)</label>
-                <input type="number" id="configMaxSize" value="10" min="1" max="50">
-            </div>
-            <div class="form-group">
-                <label>Status Auto-Refresh</label>
-                <div id="autoRefreshStatus" style="padding:8px 12px;background:#f0f4ff;border-radius:6px;font-size:0.82rem;color:#1e3c72;">
-                    ⏰ Auto-refresh aktif setiap 30 menit
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="testConnection()">🔌 Test Koneksi</button>
-            <button class="btn btn-secondary" onclick="closeModal('configModal')">Batal</button>
-            <button class="btn btn-primary" onclick="saveConfig()">💾 Simpan</button>
-        </div>
-    </div>
-</div>
-
 <!-- MODAL LIHAT FILE -->
 <div class="modal-overlay" id="fileViewerModal">
     <div class="modal">
@@ -1836,8 +1785,6 @@
         <div class="msg" id="loadingMsg">Memuat data dari server...</div>
     </div>
 </div>
-
-<div class="hidden-trigger" id="hiddenTrigger" title=""></div>
 
 <div class="toast" id="toast"></div>
 
@@ -1986,16 +1933,14 @@ const passwordMap = {
 };
 
 // ============ CONSTANTS ============
-const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxq3BHnqdH2Z_gPLzmEwORWvNXf6BnrfKN-hIEhdMcfwbC_qIHBoKry864CkugIbDo/exec';
-const AUTO_REFRESH_INTERVAL = 30 * 60 * 1000;
+const API_URL = 'https://script.google.com/macros/s/AKfycbwXwkXicB53ljTvOMt2zP0xCeineyNyYF0gGQNmOgS6QNYUZOxtejpOwCRxYWbVYrf8/exec';
+const AUTO_REFRESH_INTERVAL = 05 * 30 * 60;
+const MAX_FILE_SIZE = 10; // MB
 
 // ============ STATE ============
 let currentLembagaId = null;
 let currentFilter = 'all';
-let config = JSON.parse(localStorage.getItem('tpg_config') || '{}');
 let session = JSON.parse(localStorage.getItem('tpg_session') || 'null');
-let hiddenClickCount = 0;
-let hiddenClickTimer = null;
 let autoRefreshTimer = null;
 let countdownTimer = null;
 let lastRefreshTime = null;
@@ -2156,26 +2101,11 @@ function checkSession() {
         enterApp();
     } else {
         hideLogin();
-        // Load data untuk dashboard publik
         setTimeout(async () => {
             await syncFromServer(true);
             renderPublicDashboard();
         }, 500);
     }
-}
-
-// ============ AUTO CONFIGURE ============
-function autoConfigure() {
-    if (!config.apiUrl || config.apiUrl.trim() === '') {
-        config = {
-            apiUrl: DEFAULT_API_URL,
-            folderId: config.folderId || '',
-            spreadsheetId: config.spreadsheetId || '',
-            maxSize: config.maxSize || 10
-        };
-        localStorage.setItem('tpg_config', JSON.stringify(config));
-    }
-    updateConnectionStatus();
 }
 
 // ============ AUTO REFRESH ============
@@ -2211,14 +2141,14 @@ async function performAutoRefresh() {
 
 // ============ SYNC ============
 async function syncFromServer(silent = false) {
-    if (!config.apiUrl || isSyncing) return false;
+    if (isSyncing) return false;
     isSyncing = true;
     
     try {
         if (!silent) updateConnectionStatus('testing');
         updateSyncStatus('syncing', 'Sinkronisasi...');
         
-        const response = await fetch(config.apiUrl + '?action=sync&_t=' + Date.now(), {
+        const response = await fetch(API_URL + '?action=sync&_t=' + Date.now(), {
             method: 'GET', mode: 'cors', cache: 'no-cache'
         });
         
@@ -2240,7 +2170,6 @@ async function syncFromServer(silent = false) {
             });
             saveData(serverData);
             
-            // Re-render sesuai mode
             if (isPublicMode) {
                 renderPublicDashboard();
             } else if (session) {
@@ -2339,53 +2268,7 @@ function stopRefreshCountdown() {
     }
 }
 
-// ============ CONFIG ============
-function openConfigModal() {
-    if (session && session.role !== 'admin') {
-        showToast('⛔ Hanya admin', 'error');
-        return;
-    }
-    document.getElementById('configUrl').value = config.apiUrl || DEFAULT_API_URL;
-    document.getElementById('configFolderId').value = config.folderId || '';
-    document.getElementById('configSpreadsheetId').value = config.spreadsheetId || '';
-    document.getElementById('configMaxSize').value = config.maxSize || 10;
-    document.getElementById('configModal').classList.add('active');
-}
-
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-function saveConfig() {
-    if (session && session.role !== 'admin') { showToast('⛔ Hanya admin', 'error'); return; }
-    let url = document.getElementById('configUrl').value.trim();
-    if (!url) url = DEFAULT_API_URL;
-    if (!url.includes('script.google.com')) { showToast('URL tidak valid', 'error'); return; }
-    config = {
-        apiUrl: url,
-        folderId: document.getElementById('configFolderId').value.trim(),
-        spreadsheetId: document.getElementById('configSpreadsheetId').value.trim(),
-        maxSize: parseInt(document.getElementById('configMaxSize').value) || 10
-    };
-    localStorage.setItem('tpg_config', JSON.stringify(config));
-    closeModal('configModal');
-    updateConnectionStatus();
-    showToast('Konfigurasi disimpan', 'success');
-    startAutoRefresh();
-    startRefreshCountdown();
-}
-
-async function testConnection() {
-    const url = document.getElementById('configUrl').value.trim() || DEFAULT_API_URL;
-    try {
-        showToast('Menguji koneksi...', 'info');
-        const response = await fetch(url + '?action=test&_t=' + Date.now(), { method: 'GET', mode: 'cors', cache: 'no-cache' });
-        const data = await response.json();
-        if (data.status === 'ok') showToast('✅ Koneksi berhasil!', 'success');
-        else showToast('❌ Koneksi gagal: ' + (data.message || 'Unknown'), 'error');
-    } catch (err) {
-        showToast('❌ Error: ' + err.message, 'error');
-    }
-}
-
+// ============ CONNECTION STATUS ============
 function updateConnectionStatus(isConnected = null) {
     const statusEl = document.getElementById('connectionStatus');
     const textEl = document.getElementById('connectionText');
@@ -2395,14 +2278,9 @@ function updateConnectionStatus(isConnected = null) {
         textEl.textContent = 'Menguji...';
         return;
     }
-    if (isConnected === null) isConnected = !!config.apiUrl;
-    if (isConnected && config.apiUrl) {
-        statusEl.className = 'connection-status connected';
-        textEl.textContent = 'Terhubung';
-    } else {
-        statusEl.className = 'connection-status disconnected';
-        textEl.textContent = 'Belum Terhubung';
-    }
+    // Selalu terhubung karena URL sudah hardcoded
+    statusEl.className = 'connection-status connected';
+    textEl.textContent = 'Terhubung';
 }
 
 // ============ DATA STORAGE ============
@@ -2424,9 +2302,8 @@ function updateLembagaData(lembagaId, updater) {
 
 // ============ DRIVE UPLOAD ============
 async function uploadFileToDrive(lembagaId, itemId, file) {
-    if (!config.apiUrl) { showToast('Konfigurasi belum diatur', 'error'); return null; }
-    const maxSize = (config.maxSize || 10) * 1024 * 1024;
-    if (file.size > maxSize) { showToast(`File terlalu besar (max ${config.maxSize}MB)`, 'error'); return null; }
+    const maxSize = MAX_FILE_SIZE * 1024 * 1024;
+    if (file.size > maxSize) { showToast(`File terlalu besar (max ${MAX_FILE_SIZE}MB)`, 'error'); return null; }
 
     showUploadProgress(true, `Mengupload ${file.name}...`);
     try {
@@ -2435,7 +2312,7 @@ async function uploadFileToDrive(lembagaId, itemId, file) {
         const item = dataItems.find(i => i.no === itemId);
 
         updateUploadProgress(30, 'Mengirim ke server...');
-        const response = await fetch(config.apiUrl, {
+        const response = await fetch(API_URL, {
             method: 'POST', mode: 'cors',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
@@ -2467,9 +2344,8 @@ async function uploadFileToDrive(lembagaId, itemId, file) {
 }
 
 async function deleteFileFromDrive(fileId) {
-    if (!config.apiUrl) return false;
     try {
-        const response = await fetch(config.apiUrl, {
+        const response = await fetch(API_URL, {
             method: 'POST', mode: 'cors',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({ action: 'delete', fileId })
@@ -2511,8 +2387,7 @@ function showLoading(show, msg = '') {
 }
 
 function openDriveFolder() {
-    if (!config.apiUrl) { showToast('Konfigurasi belum diatur', 'error'); return; }
-    window.open(config.apiUrl + '?action=openFolder', '_blank');
+    window.open(API_URL + '?action=openFolder', '_blank');
 }
 
 // ============ PUBLIC DASHBOARD ============
@@ -2521,7 +2396,7 @@ function renderPublicDashboard() {
     if (!container) return;
     
     const data = getData();
-    const visibleLembaga = lembagaList; // semua 77 lembaga
+    const visibleLembaga = lembagaList;
     const totalLembaga = visibleLembaga.length;
 
     let totalChecked = 0, totalFiles = 0, completeCount = 0, emptyCount = 0;
@@ -3004,7 +2879,6 @@ function renderPublicLembagaTable(lembagaStats) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;font-style:italic;">Tidak ada lembaga yang cocok.</td></tr>';
     }
     
-    // Attach event listeners
     const sortEl = document.getElementById('publicSortLembaga');
     if (sortEl && !sortEl.dataset.bound) {
         sortEl.dataset.bound = '1';
@@ -3022,9 +2896,8 @@ function renderPublicLembagaTable(lembagaStats) {
     }
 }
 
-// ============ PRIVATE DASHBOARD (sama seperti public tapi data sesuai role) ============
+// ============ PRIVATE DASHBOARD ============
 function renderPrivateDashboard() {
-    // Untuk private, kita bisa gunakan ID yang sama dengan public, tapi dengan prefix "private"
     const container = document.getElementById('privateDashboard');
     if (!container) return;
     
@@ -3176,7 +3049,6 @@ function renderPrivateDashboard() {
 }
 
 function renderPrivateCharts(jenisStats, lembagaStats, data, visibleLembaga) {
-    // Reuse logic yang sama dengan public
     const ctx1 = document.getElementById('privateChartJenis');
     if (ctx1) {
         if (charts.privateJenis) charts.privateJenis.destroy();
@@ -3426,7 +3298,6 @@ function updateLembagaStats() {
 function openFileViewer(itemNo) {
     const item = dataItems.find(i => i.no === itemNo);
     if (!item) return;
-    const lmb = lembagaList.find(l => l.id === currentLembagaId);
     const lmbData = getLembagaData(currentLembagaId);
     const files = lmbData.files[itemNo] || [];
 
@@ -3476,33 +3347,27 @@ async function toggleCheck(no) {
     renderLembagaList();
     renderPrivateDashboard();
 
-    if (config.apiUrl) {
-        try {
-            updateSyncStatus('syncing', 'Menyimpan...');
-            await fetch(config.apiUrl, {
-                method: 'POST', mode: 'cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    action: wasChecked ? 'uncheck' : 'check',
-                    lembagaId: currentLembagaId,
-                    lembagaKode: lmb.kode,
-                    itemNo: no
-                })
-            });
-            updateSyncStatus('synced', 'Tersinkron');
-            showToast('✅ Tersimpan di server', 'success');
-        } catch (err) {
-            updateSyncStatus('error', 'Gagal sync');
-            showToast('⚠️ Tersimpan lokal', 'error');
-        }
+    try {
+        updateSyncStatus('syncing', 'Menyimpan...');
+        await fetch(API_URL, {
+            method: 'POST', mode: 'cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: wasChecked ? 'uncheck' : 'check',
+                lembagaId: currentLembagaId,
+                lembagaKode: lmb.kode,
+                itemNo: no
+            })
+        });
+        updateSyncStatus('synced', 'Tersinkron');
+        showToast('✅ Tersimpan di server', 'success');
+    } catch (err) {
+        updateSyncStatus('error', 'Gagal sync');
+        showToast('⚠️ Tersimpan lokal', 'error');
     }
 }
 
 function triggerUpload(no) {
-    if (!config.apiUrl) {
-        showToast('Konfigurasi belum diatur', 'error');
-        return;
-    }
     document.getElementById(`fileInput_${no}`).click();
 }
 
@@ -3552,7 +3417,7 @@ async function removeFile(itemId, fileId, fileName) {
     if (!confirm(`Hapus "${fileName}"?`)) return;
     showToast('Menghapus...', 'info');
 
-    if (fileId && config.apiUrl) {
+    if (fileId) {
         const deleted = await deleteFileFromDrive(fileId);
         if (!deleted) { showToast('Gagal menghapus', 'error'); return; }
     }
@@ -3644,23 +3509,8 @@ function init() {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
         }
-        if (e.ctrlKey && e.shiftKey && e.key === 'K') {
-            e.preventDefault();
-            openConfigModal();
-        }
     });
 
-    document.getElementById('hiddenTrigger').addEventListener('click', () => {
-        hiddenClickCount++;
-        clearTimeout(hiddenClickTimer);
-        hiddenClickTimer = setTimeout(() => { hiddenClickCount = 0; }, 1000);
-        if (hiddenClickCount >= 3) {
-            hiddenClickCount = 0;
-            openConfigModal();
-        }
-    });
-
-    autoConfigure();
     checkSession();
 }
 
