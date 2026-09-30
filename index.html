@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evaluasi Pemerataan Pendidikan Sekolah Dasar Kecamatan Sampang</title>
+    <title>Dashboard Evaluasi Pemerataan Pendidikan - Kecamatan Sampang</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -14,17 +15,151 @@
             overflow-x: hidden;
         }
 
+        /* ============ PUBLIC DASHBOARD (TANPA LOGIN) ============ */
+        .public-page {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #f0f2f5 0%, #e8edf5 100%);
+        }
+
+        .public-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+            color: white;
+            padding: 24px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .public-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .public-header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .public-header-left h1 {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .public-header-left p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .public-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .public-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .public-badge .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #2ecc71;
+            border-radius: 50%;
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .btn-login-public {
+            background: white;
+            color: #1e3c72;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+        }
+
+        .btn-login-public:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+
+        .public-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #666;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .live-indicator .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #2ecc71;
+            border-radius: 50%;
+            animation: pulseDot 2s infinite;
+        }
+
         /* ============ LOGIN PAGE ============ */
         .login-page {
             min-height: 100vh;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
             position: relative;
             overflow: hidden;
         }
+
+        .login-page.active { display: flex; }
 
         .login-page::before {
             content: '';
@@ -61,25 +196,11 @@
             text-align: center;
         }
 
-        .login-header .logo {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
+        .login-header .logo { font-size: 3rem; margin-bottom: 10px; }
+        .login-header h1 { font-size: 1.3rem; margin-bottom: 6px; }
+        .login-header p { font-size: 0.85rem; opacity: 0.9; }
 
-        .login-header h1 {
-            font-size: 1.3rem;
-            margin-bottom: 6px;
-        }
-
-        .login-header p {
-            font-size: 0.85rem;
-            opacity: 0.9;
-        }
-
-        .login-tabs {
-            display: flex;
-            border-bottom: 2px solid #eee;
-        }
+        .login-tabs { display: flex; border-bottom: 2px solid #eee; }
 
         .login-tab {
             flex: 1;
@@ -132,11 +253,7 @@
             border-color: #2a5298;
         }
 
-        .form-group .help {
-            font-size: 0.75rem;
-            color: #888;
-            margin-top: 4px;
-        }
+        .form-group .help { font-size: 0.75rem; color: #888; margin-top: 4px; }
 
         .login-btn {
             width: 100%;
@@ -157,11 +274,21 @@
             box-shadow: 0 6px 20px rgba(30, 60, 114, 0.3);
         }
 
-        .login-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+        .btn-back-public {
+            width: 100%;
+            padding: 10px;
+            background: #f0f2f5;
+            color: #666;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s;
         }
+
+        .btn-back-public:hover { background: #e2e6ec; color: #333; }
 
         .login-error {
             background: #fee;
@@ -195,9 +322,7 @@
             color: #6d5a00;
         }
 
-        .default-creds strong { color: #5d4e00; }
-
-        /* ============ MAIN APP ============ */
+        /* ============ MAIN APP (SETELAH LOGIN) ============ */
         .app-container { display: none; }
         .app-container.active { display: block; }
 
@@ -268,8 +393,6 @@
             border-color: rgba(231, 76, 60, 0.5);
         }
 
-        .topbar-btn.logout:hover { background: rgba(231, 76, 60, 0.5); }
-
         .connection-status {
             display: flex;
             align-items: center;
@@ -282,8 +405,46 @@
 
         .connection-status.connected { background: rgba(39, 174, 96, 0.3); border: 1px solid #27ae60; }
         .connection-status.disconnected { background: rgba(231, 76, 60, 0.3); border: 1px solid #e74c3c; }
+        .connection-status.testing { background: rgba(243, 156, 18, 0.3); border: 1px solid #f39c12; }
 
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+        .auto-refresh-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            cursor: help;
+        }
+
+        .sync-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .sync-status-badge.syncing {
+            background: rgba(243, 156, 18, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
 
         .layout {
             display: grid;
@@ -375,8 +536,6 @@
             gap: 6px;
         }
 
-        .lembaga-item .kode { font-size: 0.62rem; color: #888; font-weight: normal; }
-
         .lembaga-item .progress-mini {
             height: 3px;
             background: #eee;
@@ -415,7 +574,7 @@
         .welcome-screen {
             background: white;
             border-radius: 12px;
-            padding: 30px;
+            padding: 24px;
             text-align: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
@@ -423,25 +582,305 @@
         .welcome-screen h2 { color: #1e3c72; margin-bottom: 10px; }
         .welcome-screen p { color: #666; margin-bottom: 16px; font-size: 0.9rem; }
 
-        .dashboard-grid {
+        /* ============ DASHBOARD ENHANCED ============ */
+        .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 10px;
-            margin-top: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
             text-align: left;
         }
 
-        .dash-card {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #eee;
+        .kpi-card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 4px solid;
         }
 
-        .dash-card .title { font-size: 0.7rem; color: #666; margin-bottom: 4px; }
-        .dash-card .value { font-size: 1.4rem; font-weight: bold; color: #1e3c72; }
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
 
-        /* ============ DASHBOARD PROGRESS ============ */
+        .kpi-card.blue { border-left-color: #2a5298; }
+        .kpi-card.green { border-left-color: #27ae60; }
+        .kpi-card.orange { border-left-color: #f39c12; }
+        .kpi-card.red { border-left-color: #e74c3c; }
+        .kpi-card.purple { border-left-color: #8e44ad; }
+        .kpi-card.teal { border-left-color: #16a085; }
+
+        .kpi-card .kpi-icon {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            font-size: 1.8rem;
+            opacity: 0.15;
+        }
+
+        .kpi-card .kpi-label {
+            font-size: 0.72rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .kpi-card .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1e3c72;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .kpi-card .kpi-sub {
+            font-size: 0.72rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .kpi-card .kpi-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .kpi-trend.up { background: #d4edda; color: #155724; }
+        .kpi-trend.down { background: #f8d7da; color: #721c24; }
+        .kpi-trend.neutral { background: #e2e3e5; color: #383d41; }
+
+        .progress-ring-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 24px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
+            border-radius: 14px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            text-align: left;
+        }
+
+        .progress-ring {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            flex-shrink: 0;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+            width: 140px;
+            height: 140px;
+        }
+
+        .progress-ring .ring-bg {
+            fill: none;
+            stroke: #e0e5ef;
+            stroke-width: 12;
+        }
+
+        .progress-ring .ring-fill {
+            fill: none;
+            stroke: url(#ringGradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .progress-ring .ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .progress-ring .ring-percent {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1e3c72;
+            line-height: 1;
+        }
+
+        .progress-ring .ring-label {
+            font-size: 0.65rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-ring-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .progress-ring-info h3 {
+            font-size: 1.1rem;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+
+        .progress-ring-info p {
+            font-size: 0.82rem;
+            color: #555;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .progress-ring-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .progress-ring-stat {
+            background: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .progress-ring-stat .num {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .progress-ring-stat .lbl {
+            font-size: 0.62rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .chart-card h3 {
+            font-size: 0.9rem;
+            color: #1e3c72;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chart-card canvas { max-height: 280px; }
+
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            border-left: 4px solid;
+            transition: transform 0.2s;
+        }
+
+        .insight-card:hover { transform: translateX(4px); }
+
+        .insight-card.success { border-left-color: #27ae60; background: linear-gradient(90deg, #f0fff4 0%, white 30%); }
+        .insight-card.warning { border-left-color: #f39c12; background: linear-gradient(90deg, #fffbf0 0%, white 30%); }
+        .insight-card.danger { border-left-color: #e74c3c; background: linear-gradient(90deg, #fff5f5 0%, white 30%); }
+        .insight-card.info { border-left-color: #3498db; background: linear-gradient(90deg, #f0f8ff 0%, white 30%); }
+
+        .insight-card .insight-icon { font-size: 1.5rem; flex-shrink: 0; }
+        .insight-card .insight-body { flex: 1; }
+        .insight-card .insight-title { font-size: 0.82rem; font-weight: 700; color: #1e3c72; margin-bottom: 3px; }
+        .insight-card .insight-text { font-size: 0.75rem; color: #555; line-height: 1.4; }
+
+        .heatmap-wrapper {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+            overflow-x: auto;
+            text-align: left;
+        }
+
+        .heatmap-wrapper h3 {
+            font-size: 0.9rem;
+            color: #1e3c72;
+            margin-bottom: 14px;
+        }
+
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+            gap: 4px;
+            min-width: 100%;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .heatmap-cell[data-level="0"] { background: #f0f2f5; }
+        .heatmap-cell[data-level="1"] { background: #fee2e2; }
+        .heatmap-cell[data-level="2"] { background: #fed7aa; }
+        .heatmap-cell[data-level="3"] { background: #fef08a; }
+        .heatmap-cell[data-level="4"] { background: #bbf7d0; }
+        .heatmap-cell[data-level="5"] { background: #16a34a; }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 0.72rem;
+            color: #666;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .heatmap-legend-item { display: flex; align-items: center; gap: 4px; }
+        .heatmap-legend-box { width: 14px; height: 14px; border-radius: 3px; }
+
         .dashboard-section {
             background: white;
             border-radius: 12px;
@@ -460,35 +899,6 @@
             gap: 8px;
         }
 
-        .overall-progress-bar {
-            height: 20px;
-            background: #eee;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .overall-progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
-            transition: width 0.5s;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 8px;
-            color: white;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: #555;
-            margin-bottom: 4px;
-        }
-
         .item-progress-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -503,6 +913,32 @@
             border: 1px solid #eee;
         }
 
+        .item-progress-card.enhanced {
+            background: white;
+            border: 1px solid #eef2f7;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-progress-card.enhanced::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px;
+            height: 100%;
+            background: #e0e5ef;
+        }
+
+        .item-progress-card.enhanced.level-high::before { background: #27ae60; }
+        .item-progress-card.enhanced.level-mid::before { background: #f39c12; }
+        .item-progress-card.enhanced.level-low::before { background: #e74c3c; }
+
+        .item-progress-card.enhanced:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
         .item-progress-card .item-title {
             font-size: 0.78rem;
             font-weight: 600;
@@ -511,6 +947,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 6px;
         }
 
         .item-progress-card .item-title .no-badge {
@@ -526,9 +963,13 @@
             margin-right: 6px;
         }
 
-        .item-progress-card .item-count {
-            font-size: 0.7rem;
-            color: #666;
+        .item-progress-card .item-percent-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #f0f4ff;
+            color: #2a5298;
         }
 
         .item-progress-card .item-bar {
@@ -541,9 +982,13 @@
 
         .item-progress-card .item-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #3498db, #2980b9);
             transition: width 0.4s;
+            background: linear-gradient(90deg, #3498db, #2980b9);
         }
+
+        .item-progress-card .item-bar-fill.gradient-green { background: linear-gradient(90deg, #27ae60, #2ecc71); }
+        .item-progress-card .item-bar-fill.gradient-orange { background: linear-gradient(90deg, #f39c12, #f1c40f); }
+        .item-progress-card .item-bar-fill.gradient-red { background: linear-gradient(90deg, #e74c3c, #ec7063); }
 
         .lembaga-summary-table {
             width: 100%;
@@ -560,6 +1005,8 @@
             color: #1e3c72;
             text-transform: uppercase;
             border-bottom: 2px solid #d0d9f0;
+            position: sticky;
+            top: 0;
         }
 
         .lembaga-summary-table td {
@@ -567,9 +1014,7 @@
             border-bottom: 1px solid #eee;
         }
 
-        .lembaga-summary-table tr:hover td {
-            background: #fafbff;
-        }
+        .lembaga-summary-table tr:hover td { background: #fafbff; }
 
         .lembaga-summary-table .progress-mini-bar {
             height: 6px;
@@ -587,22 +1032,57 @@
             background: linear-gradient(90deg, #27ae60, #2ecc71);
         }
 
-        .lembaga-summary-table .status-done {
-            color: #27ae60;
+        .lembaga-summary-table .status-done { color: #27ae60; font-weight: 600; }
+        .lembaga-summary-table .status-progress { color: #f39c12; font-weight: 600; }
+        .lembaga-summary-table .status-empty { color: #e74c3c; font-weight: 600; }
+
+        .lembaga-summary-table .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.7rem;
+            background: #f0f2f5;
+            color: #666;
+        }
+
+        .lembaga-summary-table .rank-badge.top1 { background: #ffd700; color: #7a5c00; }
+        .lembaga-summary-table .rank-badge.top2 { background: #c0c0c0; color: #444; }
+        .lembaga-summary-table .rank-badge.top3 { background: #cd7f32; color: white; }
+
+        .dashboard-filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .dashboard-filter-bar select,
+        .dashboard-filter-bar input {
+            padding: 7px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-family: inherit;
+            background: white;
+        }
+
+        .dashboard-filter-bar select:focus,
+        .dashboard-filter-bar input:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+
+        .dashboard-filter-bar label {
+            font-size: 0.75rem;
+            color: #666;
             font-weight: 600;
         }
 
-        .lembaga-summary-table .status-progress {
-            color: #f39c12;
-            font-weight: 600;
-        }
-
-        .lembaga-summary-table .status-empty {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-
-        /* ============ FILE VIEWER ============ */
         .file-viewer-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -627,11 +1107,7 @@
             align-items: center;
         }
 
-        .file-viewer-card .fv-list {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .file-viewer-card .fv-list { display: flex; flex-direction: column; gap: 4px; }
 
         .file-viewer-card .fv-item {
             display: flex;
@@ -652,18 +1128,13 @@
             white-space: nowrap;
         }
 
-        .file-viewer-card .fv-item .fv-size {
-            color: #888;
-            font-size: 0.62rem;
-        }
+        .file-viewer-card .fv-item .fv-size { color: #888; font-size: 0.62rem; }
 
         .file-viewer-card .fv-item .fv-action {
             color: #2a5298;
             text-decoration: none;
             font-size: 0.7rem;
         }
-
-        .file-viewer-card .fv-item .fv-action:hover { text-decoration: underline; }
 
         .file-viewer-card .fv-empty {
             color: #999;
@@ -702,7 +1173,6 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* ============ LEMBAGA DETAIL ============ */
         .lembaga-detail { display: none; }
         .lembaga-detail.active { display: block; }
 
@@ -859,21 +1329,11 @@
         .upload-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
         .upload-btn.uploading { background: #f39c12; cursor: wait; }
 
-        .upload-btn.view {
-            background: #16a085;
-        }
+        .upload-btn.view { background: #16a085; }
         .upload-btn.view:hover { background: #138d75; }
+        .upload-btn.view-disabled { background: #bdc3c7; cursor: not-allowed; }
 
-        .upload-btn.view-disabled {
-            background: #bdc3c7;
-            cursor: not-allowed;
-        }
-
-        .btn-row {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
+        .btn-row { display: flex; gap: 5px; flex-wrap: wrap; }
 
         .file-list { display: flex; flex-direction: column; gap: 3px; margin-top: 3px; }
 
@@ -924,7 +1384,6 @@
 
         .empty-files { color: #999; font-size: 0.72rem; font-style: italic; }
 
-        /* MODAL */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -1042,7 +1501,6 @@
         .upload-progress .bar-fill { height: 100%; background: linear-gradient(90deg, #27ae60, #2ecc71); transition: width 0.3s; }
         .upload-progress .info { font-size: 0.7rem; color: #666; margin-top: 4px; }
 
-        /* Hidden config trigger */
         .hidden-trigger {
             position: fixed;
             bottom: 10px;
@@ -1054,6 +1512,40 @@
             z-index: 50;
         }
 
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1500;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.active { display: flex; }
+
+        .loading-box {
+            background: white;
+            padding: 24px 32px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #2a5298;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-box .msg { font-size: 0.85rem; color: #333; font-weight: 600; }
+
         @media (max-width: 968px) {
             .layout { grid-template-columns: 1fr; }
             .sidebar { position: relative; height: auto; max-height: 350px; top: 0; }
@@ -1063,10 +1555,48 @@
             .detail-header { flex-direction: column; align-items: flex-start; }
             .item-progress-grid { grid-template-columns: 1fr; }
             .file-viewer-grid { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .chart-grid { grid-template-columns: 1fr; }
+            .progress-ring-wrapper { flex-direction: column; text-align: center; }
+            .progress-ring-stats { width: 100%; }
+            .public-header-content { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
+
+<!-- ============ PUBLIC DASHBOARD (TANPA LOGIN) ============ -->
+<div class="public-page" id="publicPage">
+    <div class="public-header">
+        <div class="public-header-content">
+            <div class="public-header-left">
+                <h1>📋 Dashboard Evaluasi Pemerataan Pendidikan</h1>
+                <p>Sekolah Dasar Kecamatan Sampang • Kab. Sampang • 77 Lembaga</p>
+            </div>
+            <div class="public-header-right">
+                <div class="public-badge">
+                    <span class="pulse-dot"></span>
+                    <span>LIVE</span>
+                </div>
+                <div class="public-badge" id="publicLastUpdate">
+                    🕐 Update: Memuat...
+                </div>
+                <button class="btn-login-public" onclick="showLogin()">
+                    🔐 Login Admin / Lembaga
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="public-container">
+        <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>Data diperbarui otomatis setiap 30 menit</span>
+        </div>
+
+        <div id="publicDashboard"></div>
+    </div>
+</div>
 
 <!-- ============ LOGIN PAGE ============ -->
 <div class="login-page" id="loginPage">
@@ -1078,14 +1608,13 @@
         </div>
 
         <div class="login-tabs">
-            <div class="login-tab active" data-role="admin">👨‍ Admin</div>
+            <div class="login-tab active" data-role="admin">👨‍💼 Admin</div>
             <div class="login-tab" data-role="lembaga">🏫 Lembaga</div>
         </div>
 
         <div class="login-body">
             <div class="login-error" id="loginError"></div>
 
-            <!-- FORM ADMIN -->
             <form class="login-form active" id="formAdmin" onsubmit="handleLogin(event, 'admin')">
                 <div class="default-creds">
                     Hanya admin yang bisa login
@@ -1099,9 +1628,9 @@
                     <input type="password" id="adminPassword" placeholder="Masukkan password" required>
                 </div>
                 <button type="submit" class="login-btn">🔐 Masuk sebagai Admin</button>
+                <button type="button" class="btn-back-public" onclick="hideLogin()">← Kembali ke Dashboard Publik</button>
             </form>
 
-            <!-- FORM LEMBAGA -->
             <form class="login-form" id="formLembaga" onsubmit="handleLogin(event, 'lembaga')">
                 <div class="default-creds">
                     <strong>💡 Cara Login:</strong><br>
@@ -1119,6 +1648,7 @@
                     <div class="help">Gunakan password yang telah ditentukan untuk setiap sekolah.</div>
                 </div>
                 <button type="submit" class="login-btn">🔐 Masuk sebagai Lembaga</button>
+                <button type="button" class="btn-back-public" onclick="hideLogin()">← Kembali ke Dashboard Publik</button>
             </form>
         </div>
 
@@ -1128,7 +1658,7 @@
     </div>
 </div>
 
-<!-- ============ MAIN APP ============ -->
+<!-- ============ MAIN APP (SETELAH LOGIN) ============ -->
 <div class="app-container" id="appContainer">
     <div class="topbar">
         <div class="topbar-left">
@@ -1140,8 +1670,18 @@
                 <span class="status-dot"></span>
                 <span id="connectionText">Belum Terhubung</span>
             </div>
+            <div class="auto-refresh-badge" id="autoRefreshBadge" title="Auto-refresh aktif setiap 30 menit">
+                <span>⏰</span>
+                <span id="refreshCountdown">30:00</span>
+            </div>
+            <div class="sync-status-badge" id="syncStatusBadge" title="Status sinkronisasi dengan server">
+                <span id="syncIcon">☁️</span>
+                <span id="syncText">Tersinkron</span>
+            </div>
+            <button class="topbar-btn" onclick="manualSync()" title="Sync manual dari server">🔄 Sync</button>
             <button class="topbar-btn" onclick="exportSummary()" id="btnExport">📊 Export Rekap</button>
             <button class="topbar-btn" onclick="openDriveFolder()">📁 Buka Drive</button>
+            <button class="topbar-btn" onclick="viewPublicDashboard()">👁️ Lihat Dashboard Publik</button>
             <div class="user-badge">
                 <span class="avatar" id="userAvatar"></span>
                 <span id="userName">-</span>
@@ -1179,88 +1719,12 @@
         </aside>
 
         <main class="main">
-            <!-- ========== DASHBOARD VIEW ========== -->
             <div class="welcome-screen" id="welcomeScreen">
                 <h2>👋 Selamat Datang, <span id="welcomeName">Admin</span></h2>
                 <p id="welcomeText">Pilih lembaga dari sidebar untuk mengelola kelengkapan data verifikasi TPG</p>
-                <div class="dashboard-grid" id="dashboardGrid">
-                    <div class="dash-card">
-                        <div class="title">Total Lembaga</div>
-                        <div class="value" id="dashTotal">77</div>
-                    </div>
-                    <div class="dash-card">
-                        <div class="title">UPTD SDN</div>
-                        <div class="value">64</div>
-                    </div>
-                    <div class="dash-card">
-                        <div class="title">SDS (Swasta)</div>
-                        <div class="value">13</div>
-                    </div>
-                    <div class="dash-card">
-                        <div class="title">Total Item Data</div>
-                        <div class="value">27</div>
-                    </div>
-                    <div class="dash-card">
-                        <div class="title">Total File di Drive</div>
-                        <div class="value" id="totalFiles">0</div>
-                    </div>
-                    <div class="dash-card">
-                        <div class="title">Progress Keseluruhan</div>
-                        <div class="value" id="overallProgress">0%</div>
-                    </div>
-                </div>
-
-                <!-- ====== PROGRESS DASHBOARD ====== -->
-                <div class="dashboard-section" id="progressDashboard">
-                    <div class="tab-bar" id="dashboardTabs">
-                        <button class="active" data-tab="progress">📊 Progress</button>
-                        <button data-tab="files">📁 Rekap File</button>
-                    </div>
-
-                    <!-- TAB PROGRESS -->
-                    <div class="tab-content active" id="tab-progress">
-                        <h3>📊 Progress Pengisian 27 Item Data</h3>
-                        <div class="progress-label">
-                            <span>Total item tercentang</span>
-                            <span id="overallItemProgressText">0 / 2079</span>
-                        </div>
-                        <div class="overall-progress-bar">
-                            <div class="overall-progress-fill" id="overallItemProgressFill" style="width:0%">0%</div>
-                        </div>
-
-                        <h3 style="margin-top:20px;">📋 Detail per Item Data</h3>
-                        <div class="item-progress-grid" id="itemProgressGrid"></div>
-
-                        <h3 style="margin-top:20px;">🏫 Ringkasan per Lembaga</h3>
-                        <div style="max-height:400px; overflow-y:auto; border:1px solid #eee; border-radius:8px;">
-                            <table class="lembaga-summary-table" id="lembagaSummaryTable">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Kode</th>
-                                        <th>Nama Lembaga</th>
-                                        <th>Checklist</th>
-                                        <th>File</th>
-                                        <th>Progress</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="lembagaSummaryBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- TAB FILES -->
-                    <div class="tab-content" id="tab-files">
-                        <h3>📁 Rekap File yang Sudah Diupload</h3>
-                        <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">
-                            Menampilkan semua file yang sudah diupload oleh lembaga, dikelompokkan per item data.
-                        </p>
-                        <div class="file-viewer-grid" id="fileViewerGrid"></div>
-                    </div>
-                </div>
+                <div id="privateDashboard"></div>
             </div>
 
-            <!-- ========== LEMBAGA DETAIL VIEW ========== -->
             <div class="lembaga-detail" id="lembagaDetail">
                 <div class="detail-header">
                     <div class="detail-header-left">
@@ -1306,7 +1770,7 @@
     </div>
 </div>
 
-<!-- MODAL CONFIG (HIDDEN - only accessible via shortcut or admin) -->
+<!-- MODAL CONFIG -->
 <div class="modal-overlay" id="configModal">
     <div class="modal">
         <div class="modal-header">
@@ -1317,7 +1781,7 @@
             <div class="form-group">
                 <label>Apps Script Web App URL</label>
                 <input type="text" id="configUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
-                <div class="help">URL dari deploy Apps Script sebagai Web App</div>
+                <div class="help">URL dari deploy Apps Script sebagai Web App (kosongkan untuk default)</div>
             </div>
             <div class="form-group">
                 <label>Folder ID Google Drive (Opsional)</label>
@@ -1331,35 +1795,17 @@
                 <label>Max Ukuran File (MB)</label>
                 <input type="number" id="configMaxSize" value="10" min="1" max="50">
             </div>
+            <div class="form-group">
+                <label>Status Auto-Refresh</label>
+                <div id="autoRefreshStatus" style="padding:8px 12px;background:#f0f4ff;border-radius:6px;font-size:0.82rem;color:#1e3c72;">
+                    ⏰ Auto-refresh aktif setiap 30 menit
+                </div>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="testConnection()">🔌 Test Koneksi</button>
             <button class="btn btn-secondary" onclick="closeModal('configModal')">Batal</button>
-            <button class="btn btn-primary" onclick="saveConfig()"> Simpan</button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL GANTI PASSWORD LEMBAGA -->
-<div class="modal-overlay" id="passwordModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3>🔑 Ganti Password Lembaga</h3>
-            <button class="modal-close" onclick="closeModal('passwordModal')">×</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label>Pilih Lembaga</label>
-                <select id="pwdLembagaSelect"></select>
-            </div>
-            <div class="form-group">
-                <label>Password Baru</label>
-                <input type="password" id="pwdBaru" placeholder="Min. 6 karakter">
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal('passwordModal')">Batal</button>
-            <button class="btn btn-primary" onclick="savePassword()">💾 Simpan Password</button>
+            <button class="btn btn-primary" onclick="saveConfig()">💾 Simpan</button>
         </div>
     </div>
 </div>
@@ -1371,9 +1817,7 @@
             <h3 id="fileViewerTitle">📁 Daftar File</h3>
             <button class="modal-close" onclick="closeModal('fileViewerModal')">×</button>
         </div>
-        <div class="modal-body" id="fileViewerBody">
-            <!-- content dinamis -->
-        </div>
+        <div class="modal-body" id="fileViewerBody"></div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('fileViewerModal')">Tutup</button>
         </div>
@@ -1381,12 +1825,18 @@
 </div>
 
 <div class="upload-progress" id="uploadProgress">
-    <div class="title"> Mengupload ke Google Drive...</div>
+    <div class="title">📤 Mengupload ke Google Drive...</div>
     <div class="bar"><div class="bar-fill" id="uploadBarFill" style="width: 0%"></div></div>
     <div class="info" id="uploadInfo">Mempersiapkan file...</div>
 </div>
 
-<!-- Hidden trigger for config (bottom-right corner, invisible) -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+        <div class="loading-spinner"></div>
+        <div class="msg" id="loadingMsg">Memuat data dari server...</div>
+    </div>
+</div>
+
 <div class="hidden-trigger" id="hiddenTrigger" title=""></div>
 
 <div class="toast" id="toast"></div>
@@ -1506,84 +1956,38 @@ const lembagaList = [
 
 // ============ PASSWORD MAP ============
 const passwordMap = {
-    "UPTD SDN AENGSAREH 1": "20529219",
-    "UPTD SDN AENGSAREH 2": "20529218",
-    "UPTD SDN AENGSAREH 3": "20529217",
-    "UPTD SDN BANYUANYAR 1": "20528402",
-    "UPTD SDN BANYUANYAR 2": "20528418",
-    "UPTD SDN BANYUANYAR 3": "20528419",
-    "UPTD SDN BANYUANYAR 4": "20528420",
-    "UPTD SDN BANYUMAS": "20528425",
-    "UPTD SDN BARUH 1": "20528421",
-    "UPTD SDN BARUH 2": "20528401",
-    "UPTD SDN BARUH 3": "20528400",
-    "UPTD SDN DALPENANG 1": "20528511",
-    "UPTD SDN DALPENANG 2": "20528510",
-    "UPTD SDN DALPENANG 3": "20528509",
-    "UPTD SDN GUNUNG MADDAH 1": "20528443",
-    "UPTD SDN GUNUNG MADDAH 2": "20528442",
-    "UPTD SDN GUNUNG MADDAH 3": "20528441",
-    "UPTD SDN GUNUNG MADDAH 4": "20528440",
-    "UPTD SDN GUNUNG MADDAH 5": "20528439",
-    "UPTD SDN GUNUNG SEKAR 1": "20528475",
-    "UPTD SDN GUNUNG SEKAR 2": "20528474",
-    "UPTD SDN GUNUNG SEKAR 4": "20528472",
-    "UPTD SDN GUNUNG SEKAR 5": "20528471",
-    "UPTD SDN GUNUNG SEKAR 6": "20528470",
-    "UPTD SDN KAMUNING 1": "20528256",
-    "UPTD SDN KAMUNING 2": "20528255",
-    "UPTD SDN KAMUNING 3": "20528254",
-    "UPTD SDN KARANGDALEM 1": "20528280",
-    "UPTD SDN KARANGDALEM 3": "20528278",
-    "UPTD SDN KARANGDALEM 4": "20528277",
-    "UPTD SDN KARANGDALEM 5": "20528276",
-    "UPTD SDN P.MANDANGIN 1": "20528721",
-    "UPTD SDN P.MANDANGIN 2": "20528720",
-    "UPTD SDN P.MANDANGIN 3": "20528719",
-    "UPTD SDN P.MANDANGIN 4": "20528718",
-    "UPTD SDN P.MANDANGIN 5": "20528716",
-    "UPTD SDN P.MANDANGIN 6": "20528715",
-    "UPTD SDN P.MANDANGIN 7": "20528714",
-    "UPTD SDN P.MANDANGIN 8": "20528713",
-    "UPTD SDN P.MANDANGIN 9": "20528717",
-    "UPTD SDN PANGGUNG 1": "20528681",
-    "UPTD SDN PANGGUNG 2": "20528680",
-    "UPTD SDN PANGILEN 1": "20528677",
-    "UPTD SDN PANGILEN 2": "20528676",
-    "UPTD SDN PANGILEN 3": "20528675",
-    "UPTD SDN PANGILEN 4": "20528674",
-    "UPTD SDN PASEYAN 1": "20528691",
-    "UPTD SDN PASEYAN 2": "20528690",
-    "UPTD SDN PEKALONGAN 1": "20528706",
-    "UPTD SDN PEKALONGAN 2": "20528722",
-    "UPTD SDN PEKALONGAN 3": "20528723",
-    "UPTD SDN POLAGAN 1": "20528785",
-    "UPTD SDN POLAGAN 2": "20528784",
-    "UPTD SDN POLAGAN 3": "20528783",
-    "UPTD SDN POLAGAN 4": "20528782",
-    "UPTD SDN RONGTENGAH 1": "20528752",
-    "UPTD SDN RONGTENGAH 2": "20528751",
-    "UPTD SDN RONGTENGAH 3": "20528750",
-    "UPTD SDN RONGTENGAH 4": "20528749",
-    "UPTD SDN RONGTENGAH 5": "20528748",
-    "UPTD SDN TAMANSAREH 1": "20528573",
-    "UPTD SDN TAMANSAREH 2": "20528589",
-    "UPTD SDN TANGGUMONG 1": "20528520",
+    "UPTD SDN AENGSAREH 1": "20529219", "UPTD SDN AENGSAREH 2": "20529218", "UPTD SDN AENGSAREH 3": "20529217",
+    "UPTD SDN BANYUANYAR 1": "20528402", "UPTD SDN BANYUANYAR 2": "20528418", "UPTD SDN BANYUANYAR 3": "20528419",
+    "UPTD SDN BANYUANYAR 4": "20528420", "UPTD SDN BANYUMAS": "20528425", "UPTD SDN BARUH 1": "20528421",
+    "UPTD SDN BARUH 2": "20528401", "UPTD SDN BARUH 3": "20528400", "UPTD SDN DALPENANG 1": "20528511",
+    "UPTD SDN DALPENANG 2": "20528510", "UPTD SDN DALPENANG 3": "20528509", "UPTD SDN GUNUNG MADDAH 1": "20528443",
+    "UPTD SDN GUNUNG MADDAH 2": "20528442", "UPTD SDN GUNUNG MADDAH 3": "20528441", "UPTD SDN GUNUNG MADDAH 4": "20528440",
+    "UPTD SDN GUNUNG MADDAH 5": "20528439", "UPTD SDN GUNUNG SEKAR 1": "20528475", "UPTD SDN GUNUNG SEKAR 2": "20528474",
+    "UPTD SDN GUNUNG SEKAR 4": "20528472", "UPTD SDN GUNUNG SEKAR 5": "20528471", "UPTD SDN GUNUNG SEKAR 6": "20528470",
+    "UPTD SDN KAMUNING 1": "20528256", "UPTD SDN KAMUNING 2": "20528255", "UPTD SDN KAMUNING 3": "20528254",
+    "UPTD SDN KARANGDALEM 1": "20528280", "UPTD SDN KARANGDALEM 3": "20528278", "UPTD SDN KARANGDALEM 4": "20528277",
+    "UPTD SDN KARANGDALEM 5": "20528276", "UPTD SDN P.MANDANGIN 1": "20528721", "UPTD SDN P.MANDANGIN 2": "20528720",
+    "UPTD SDN P.MANDANGIN 3": "20528719", "UPTD SDN P.MANDANGIN 4": "20528718", "UPTD SDN P.MANDANGIN 5": "20528716",
+    "UPTD SDN P.MANDANGIN 6": "20528715", "UPTD SDN P.MANDANGIN 7": "20528714", "UPTD SDN P.MANDANGIN 8": "20528713",
+    "UPTD SDN P.MANDANGIN 9": "20528717", "UPTD SDN PANGGUNG 1": "20528681", "UPTD SDN PANGGUNG 2": "20528680",
+    "UPTD SDN PANGILEN 1": "20528677", "UPTD SDN PANGILEN 2": "20528676", "UPTD SDN PANGILEN 3": "20528675",
+    "UPTD SDN PANGILEN 4": "20528674", "UPTD SDN PASEYAN 1": "20528691", "UPTD SDN PASEYAN 2": "20528690",
+    "UPTD SDN PEKALONGAN 1": "20528706", "UPTD SDN PEKALONGAN 2": "20528722", "UPTD SDN PEKALONGAN 3": "20528723",
+    "UPTD SDN POLAGAN 1": "20528785", "UPTD SDN POLAGAN 2": "20528784", "UPTD SDN POLAGAN 3": "20528783",
+    "UPTD SDN POLAGAN 4": "20528782", "UPTD SDN RONGTENGAH 1": "20528752", "UPTD SDN RONGTENGAH 2": "20528751",
+    "UPTD SDN RONGTENGAH 3": "20528750", "UPTD SDN RONGTENGAH 4": "20528749", "UPTD SDN RONGTENGAH 5": "20528748",
+    "UPTD SDN TAMANSAREH 1": "20528573", "UPTD SDN TAMANSAREH 2": "20528589", "UPTD SDN TANGGUMONG 1": "20528520",
     "UPTD SDN TANGGUMONG 2": "20528519",
-    "SDS AL - MADANI": "69824964",
-    "SDS AL FITROH": "70050067",
-    "SDS AL MUAWANAH": "69830692",
-    "SDS ISLAM AL - KAROMAH": "20529220",
-    "SDS ISLAM BAITUR ROHMAN": "70025681",
-    "SDS ISLAM DARUL IMAN": "69953346",
-    "SDS ISLAM HIDAYATUL FADHILAH": "69829535",
-    "SDS ISLAM MAARIF NU 2": "20570796",
-    "SDS ISLAM NURUL JADID": "20574119",
-    "SDS ISLAM TERPADU  AL - FAIZIN": "20551774",
-    "SDS ISLAM TERPADU NURUL HIDAYAH": "20558430",
-    "SDS MAARIF NU SAMPANG": "20571158",
-    "SDS NAHDLATUL ULAMA": "69753155"
+    "SDS AL - MADANI": "69824964", "SDS AL FITROH": "70050067", "SDS AL MUAWANAH": "69830692",
+    "SDS ISLAM AL - KAROMAH": "20529220", "SDS ISLAM BAITUR ROHMAN": "70025681", "SDS ISLAM DARUL IMAN": "69953346",
+    "SDS ISLAM HIDAYATUL FADHILAH": "69829535", "SDS ISLAM MAARIF NU 2": "20570796", "SDS ISLAM NURUL JADID": "20574119",
+    "SDS ISLAM TERPADU AL - FAIZIN": "20551774", "SDS ISLAM TERPADU NURUL HIDAYAH": "20558430",
+    "SDS MAARIF NU SAMPANG": "20571158", "SDS NAHDLATUL ULAMA": "69753155"
 };
+
+// ============ CONSTANTS ============
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxq3BHnqdH2Z_gPLzmEwORWvNXf6BnrfKN-hIEhdMcfwbC_qIHBoKry864CkugIbDo/exec';
+const AUTO_REFRESH_INTERVAL = 30 * 60 * 1000;
 
 // ============ STATE ============
 let currentLembagaId = null;
@@ -1592,42 +1996,56 @@ let config = JSON.parse(localStorage.getItem('tpg_config') || '{}');
 let session = JSON.parse(localStorage.getItem('tpg_session') || 'null');
 let hiddenClickCount = 0;
 let hiddenClickTimer = null;
+let autoRefreshTimer = null;
+let countdownTimer = null;
+let lastRefreshTime = null;
+let isAutoRefreshing = false;
+let isSyncing = false;
+let charts = {};
+let isPublicMode = true;
 
-// ============ PASSWORD MANAGEMENT ============
-function getPasswords() {
-    return JSON.parse(localStorage.getItem('tpg_passwords') || '{}');
-}
-
-function savePasswords(pwds) {
-    localStorage.setItem('tpg_passwords', JSON.stringify(pwds));
-}
+// ============ PASSWORD ============
+function getPasswords() { return JSON.parse(localStorage.getItem('tpg_passwords') || '{}'); }
+function savePasswords(pwds) { localStorage.setItem('tpg_passwords', JSON.stringify(pwds)); }
 
 function getLembagaPassword(kode) {
     const pwds = getPasswords();
     if (pwds[kode]) return pwds[kode];
-
     const lmb = lembagaList.find(l => l.kode === kode);
-    if (lmb && passwordMap[lmb.nama]) {
-        return passwordMap[lmb.nama];
-    }
-
+    if (lmb && passwordMap[lmb.nama]) return passwordMap[lmb.nama];
     if (lmb) {
-        const normalizedName = lmb.nama.replace(/\s+/g, ' ').trim();
-        for (const [key, val] of Object.entries(passwordMap)) {
-            if (key.replace(/\s+/g, ' ').trim() === normalizedName) return val;
+        const n = lmb.nama.replace(/\s+/g, ' ').trim();
+        for (const [k, v] of Object.entries(passwordMap)) {
+            if (k.replace(/\s+/g, ' ').trim() === n) return v;
         }
     }
-
     return '123456';
 }
 
-function setLembagaPassword(kode, password) {
-    const pwds = getPasswords();
-    pwds[kode] = password;
-    savePasswords(pwds);
+// ============ PUBLIC / LOGIN SWITCH ============
+function showLogin() {
+    isPublicMode = false;
+    document.getElementById('publicPage').style.display = 'none';
+    document.getElementById('loginPage').classList.add('active');
+    document.getElementById('appContainer').classList.remove('active');
 }
 
-// ============ AUTH SYSTEM ============
+function hideLogin() {
+    isPublicMode = true;
+    document.getElementById('publicPage').style.display = 'block';
+    document.getElementById('loginPage').classList.remove('active');
+    document.getElementById('appContainer').classList.remove('active');
+}
+
+function viewPublicDashboard() {
+    isPublicMode = true;
+    document.getElementById('publicPage').style.display = 'block';
+    document.getElementById('loginPage').classList.remove('active');
+    document.getElementById('appContainer').classList.remove('active');
+    renderPublicDashboard();
+}
+
+// ============ AUTH ============
 function handleLogin(event, role) {
     event.preventDefault();
     const errorEl = document.getElementById('loginError');
@@ -1636,15 +2054,9 @@ function handleLogin(event, role) {
     if (role === 'admin') {
         const username = document.getElementById('adminUsername').value.trim();
         const password = document.getElementById('adminPassword').value;
-
         const adminCreds = JSON.parse(localStorage.getItem('tpg_admin_creds') || '{"username":"admin","password":"admin2026"}');
-
         if (username === adminCreds.username && password === adminCreds.password) {
-            session = {
-                role: 'admin',
-                username: username,
-                loginTime: new Date().toISOString()
-            };
+            session = { role: 'admin', username, loginTime: new Date().toISOString() };
             localStorage.setItem('tpg_session', JSON.stringify(session));
             enterApp();
         } else {
@@ -1654,24 +2066,14 @@ function handleLogin(event, role) {
     } else {
         const kode = document.getElementById('lembagaSelect').value;
         const password = document.getElementById('lembagaPassword').value;
-
         if (!kode) {
             errorEl.textContent = '❌ Pilih sekolah terlebih dahulu!';
             errorEl.classList.add('show');
             return;
         }
-
-        const correctPassword = getLembagaPassword(kode);
-        if (password === correctPassword) {
+        if (password === getLembagaPassword(kode)) {
             const lmb = lembagaList.find(l => l.kode === kode);
-            session = {
-                role: 'lembaga',
-                username: kode,
-                lembagaId: lmb.id,
-                lembagaKode: lmb.kode,
-                lembagaNama: lmb.nama,
-                loginTime: new Date().toISOString()
-            };
+            session = { role: 'lembaga', username: kode, lembagaId: lmb.id, lembagaKode: lmb.kode, lembagaNama: lmb.nama, loginTime: new Date().toISOString() };
             localStorage.setItem('tpg_session', JSON.stringify(session));
             enterApp();
         } else {
@@ -1683,22 +2085,19 @@ function handleLogin(event, role) {
 
 function handleLogout() {
     if (!confirm('Yakin ingin logout?')) return;
+    stopAutoRefresh();
+    stopRefreshCountdown();
     localStorage.removeItem('tpg_session');
     session = null;
     currentLembagaId = null;
-    document.getElementById('appContainer').classList.remove('active');
-    document.getElementById('loginPage').style.display = 'flex';
-    
-    document.getElementById('adminUsername').value = '';
-    document.getElementById('adminPassword').value = '';
-    document.getElementById('lembagaPassword').value = '';
-    document.getElementById('loginError').classList.remove('show');
-    
+    hideLogin();
     showToast('Berhasil logout', 'info');
 }
 
 function enterApp() {
-    document.getElementById('loginPage').style.display = 'none';
+    isPublicMode = false;
+    document.getElementById('publicPage').style.display = 'none';
+    document.getElementById('loginPage').classList.remove('active');
     document.getElementById('appContainer').classList.add('active');
     
     if (session.role === 'admin') {
@@ -1711,10 +2110,8 @@ function enterApp() {
         document.getElementById('filterTabs').style.display = 'flex';
         document.getElementById('sidebarStats').style.display = 'grid';
         document.getElementById('btnExport').style.display = 'flex';
-        document.getElementById('dashTotal').textContent = '77';
-        
         renderLembagaList();
-        renderDashboard();
+        renderPrivateDashboard();
     } else {
         const lmb = lembagaList.find(l => l.id === session.lembagaId);
         document.getElementById('userName').textContent = lmb.kode;
@@ -1726,17 +2123,24 @@ function enterApp() {
         document.getElementById('filterTabs').style.display = 'none';
         document.getElementById('sidebarStats').style.display = 'none';
         document.getElementById('btnExport').style.display = 'none';
-        document.getElementById('dashTotal').textContent = '1';
-        
-        document.querySelectorAll('.dash-card')[1].style.display = 'none';
-        document.querySelectorAll('.dash-card')[2].style.display = 'none';
-        
         currentLembagaId = session.lembagaId;
         renderLembagaList();
         selectLembaga(session.lembagaId);
     }
     
     updateConnectionStatus();
+    startAutoRefresh();
+    startRefreshCountdown();
+    
+    setTimeout(async () => {
+        showLoading(true, 'Memuat data dari server...');
+        const ok = await syncFromServer(true);
+        showLoading(false);
+        if (ok) {
+            showToast('✅ Data tersinkron dari server', 'success');
+            if (currentLembagaId) selectLembaga(currentLembagaId);
+        }
+    }, 300);
 }
 
 function checkSession() {
@@ -1750,35 +2154,211 @@ function checkSession() {
             }
         }
         enterApp();
+    } else {
+        hideLogin();
+        // Load data untuk dashboard publik
+        setTimeout(async () => {
+            await syncFromServer(true);
+            renderPublicDashboard();
+        }, 500);
     }
 }
 
-// ============ CONFIG (HIDDEN) ============
+// ============ AUTO CONFIGURE ============
+function autoConfigure() {
+    if (!config.apiUrl || config.apiUrl.trim() === '') {
+        config = {
+            apiUrl: DEFAULT_API_URL,
+            folderId: config.folderId || '',
+            spreadsheetId: config.spreadsheetId || '',
+            maxSize: config.maxSize || 10
+        };
+        localStorage.setItem('tpg_config', JSON.stringify(config));
+    }
+    updateConnectionStatus();
+}
+
+// ============ AUTO REFRESH ============
+function startAutoRefresh() {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    lastRefreshTime = new Date();
+    autoRefreshTimer = setInterval(() => performAutoRefresh(), AUTO_REFRESH_INTERVAL);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+}
+
+async function performAutoRefresh() {
+    if (isAutoRefreshing) return;
+    isAutoRefreshing = true;
+    try {
+        const success = await syncFromServer(true);
+        if (success) {
+            lastRefreshTime = new Date();
+            updatePublicLastUpdate();
+            if (!isPublicMode) showToast('🔄 Data tersinkron otomatis', 'info');
+        }
+    } catch (error) {
+        console.error('❌ Auto-refresh gagal:', error);
+    } finally {
+        isAutoRefreshing = false;
+    }
+}
+
+// ============ SYNC ============
+async function syncFromServer(silent = false) {
+    if (!config.apiUrl || isSyncing) return false;
+    isSyncing = true;
+    
+    try {
+        if (!silent) updateConnectionStatus('testing');
+        updateSyncStatus('syncing', 'Sinkronisasi...');
+        
+        const response = await fetch(config.apiUrl + '?action=sync&_t=' + Date.now(), {
+            method: 'GET', mode: 'cors', cache: 'no-cache'
+        });
+        
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            const serverData = result.data || {};
+            lembagaList.forEach(lmb => {
+                if (!serverData[lmb.id]) {
+                    serverData[lmb.id] = { checked: [], files: {} };
+                } else {
+                    if (!Array.isArray(serverData[lmb.id].checked)) serverData[lmb.id].checked = [];
+                    if (!serverData[lmb.id].files || typeof serverData[lmb.id].files !== 'object') {
+                        serverData[lmb.id].files = {};
+                    }
+                }
+            });
+            saveData(serverData);
+            
+            // Re-render sesuai mode
+            if (isPublicMode) {
+                renderPublicDashboard();
+            } else if (session) {
+                if (session.role === 'admin') {
+                    renderLembagaList();
+                    renderPrivateDashboard();
+                    if (currentLembagaId) renderChecklist();
+                } else {
+                    renderLembagaList();
+                    renderChecklist();
+                }
+            }
+            
+            updateConnectionStatus(true);
+            updateSyncStatus('synced', 'Tersinkron');
+            updatePublicLastUpdate();
+            return true;
+        } else {
+            throw new Error(result.message || 'Sync gagal');
+        }
+    } catch (err) {
+        updateConnectionStatus(false);
+        updateSyncStatus('error', 'Gagal sync');
+        return false;
+    } finally {
+        isSyncing = false;
+    }
+}
+
+function updateSyncStatus(status, text) {
+    const badge = document.getElementById('syncStatusBadge');
+    const icon = document.getElementById('syncIcon');
+    const txt = document.getElementById('syncText');
+    if (!badge) return;
+    badge.classList.remove('syncing');
+    if (status === 'syncing') {
+        badge.classList.add('syncing');
+        icon.textContent = '⏳';
+        txt.textContent = text;
+    } else if (status === 'synced') {
+        icon.textContent = '☁️';
+        txt.textContent = text;
+    } else if (status === 'error') {
+        icon.textContent = '⚠️';
+        txt.textContent = text;
+    }
+}
+
+function updatePublicLastUpdate() {
+    const el = document.getElementById('publicLastUpdate');
+    if (el) {
+        const now = new Date();
+        el.textContent = `🕐 Update: ${now.toLocaleTimeString('id-ID')}`;
+    }
+}
+
+async function manualSync() {
+    showToast('🔄 Menyinkronkan data...', 'info');
+    const ok = await syncFromServer(false);
+    if (ok && currentLembagaId) selectLembaga(currentLembagaId);
+}
+
+function getNextRefreshTime() {
+    if (!lastRefreshTime) return null;
+    return new Date(lastRefreshTime.getTime() + AUTO_REFRESH_INTERVAL);
+}
+
+// ============ COUNTDOWN ============
+function startRefreshCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    function updateCountdown() {
+        const nextRefresh = getNextRefreshTime();
+        const el = document.getElementById('refreshCountdown');
+        if (!el) return;
+        if (!nextRefresh) {
+            el.textContent = '--:--';
+            return;
+        }
+        const diff = nextRefresh - new Date();
+        if (diff <= 0) {
+            el.textContent = '00:00';
+            return;
+        }
+        const m = Math.floor(diff / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+    updateCountdown();
+    countdownTimer = setInterval(updateCountdown, 1000);
+}
+
+function stopRefreshCountdown() {
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+    }
+}
+
+// ============ CONFIG ============
 function openConfigModal() {
-    if (session.role !== 'admin') {
-        showToast('⛔ Hanya admin yang dapat mengakses konfigurasi', 'error');
+    if (session && session.role !== 'admin') {
+        showToast('⛔ Hanya admin', 'error');
         return;
     }
-    document.getElementById('configUrl').value = config.apiUrl || '';
+    document.getElementById('configUrl').value = config.apiUrl || DEFAULT_API_URL;
     document.getElementById('configFolderId').value = config.folderId || '';
     document.getElementById('configSpreadsheetId').value = config.spreadsheetId || '';
     document.getElementById('configMaxSize').value = config.maxSize || 10;
     document.getElementById('configModal').classList.add('active');
 }
 
-function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
-}
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
 function saveConfig() {
-    if (session.role !== 'admin') {
-        showToast('⛔ Hanya admin', 'error');
-        return;
-    }
-    const url = document.getElementById('configUrl').value.trim();
-    if (!url) { showToast('URL wajib diisi', 'error'); return; }
+    if (session && session.role !== 'admin') { showToast('⛔ Hanya admin', 'error'); return; }
+    let url = document.getElementById('configUrl').value.trim();
+    if (!url) url = DEFAULT_API_URL;
     if (!url.includes('script.google.com')) { showToast('URL tidak valid', 'error'); return; }
-
     config = {
         apiUrl: url,
         folderId: document.getElementById('configFolderId').value.trim(),
@@ -1789,29 +2369,34 @@ function saveConfig() {
     closeModal('configModal');
     updateConnectionStatus();
     showToast('Konfigurasi disimpan', 'success');
+    startAutoRefresh();
+    startRefreshCountdown();
 }
 
 async function testConnection() {
-    const url = document.getElementById('configUrl').value.trim();
-    if (!url) { showToast('Isi URL dulu', 'error'); return; }
+    const url = document.getElementById('configUrl').value.trim() || DEFAULT_API_URL;
     try {
         showToast('Menguji koneksi...', 'info');
-        const response = await fetch(url + '?action=test', { method: 'GET', mode: 'cors' });
+        const response = await fetch(url + '?action=test&_t=' + Date.now(), { method: 'GET', mode: 'cors', cache: 'no-cache' });
         const data = await response.json();
-        if (data.status === 'ok') {
-            showToast('✅ Koneksi berhasil! Folder: ' + (data.folderName || 'Default'), 'success');
-        } else {
-            showToast('❌ Koneksi gagal: ' + (data.message || 'Unknown'), 'error');
-        }
+        if (data.status === 'ok') showToast('✅ Koneksi berhasil!', 'success');
+        else showToast('❌ Koneksi gagal: ' + (data.message || 'Unknown'), 'error');
     } catch (err) {
         showToast('❌ Error: ' + err.message, 'error');
     }
 }
 
-function updateConnectionStatus() {
+function updateConnectionStatus(isConnected = null) {
     const statusEl = document.getElementById('connectionStatus');
     const textEl = document.getElementById('connectionText');
-    if (config.apiUrl) {
+    if (!statusEl) return;
+    if (isConnected === 'testing') {
+        statusEl.className = 'connection-status testing';
+        textEl.textContent = 'Menguji...';
+        return;
+    }
+    if (isConnected === null) isConnected = !!config.apiUrl;
+    if (isConnected && config.apiUrl) {
         statusEl.className = 'connection-status connected';
         textEl.textContent = 'Terhubung';
     } else {
@@ -1837,7 +2422,7 @@ function updateLembagaData(lembagaId, updater) {
     saveData(data);
 }
 
-// ============ GOOGLE DRIVE ============
+// ============ DRIVE UPLOAD ============
 async function uploadFileToDrive(lembagaId, itemId, file) {
     if (!config.apiUrl) { showToast('Konfigurasi belum diatur', 'error'); return null; }
     const maxSize = (config.maxSize || 10) * 1024 * 1024;
@@ -1851,14 +2436,10 @@ async function uploadFileToDrive(lembagaId, itemId, file) {
 
         updateUploadProgress(30, 'Mengirim ke server...');
         const response = await fetch(config.apiUrl, {
-            method: 'POST',
-            mode: 'cors',
+            method: 'POST', mode: 'cors',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
-                action: 'upload',
-                fileName: file.name,
-                mimeType: file.type,
-                base64Data: base64,
+                action: 'upload', fileName: file.name, mimeType: file.type, base64Data: base64,
                 lembagaId, lembagaKode: lmb.kode, lembagaNama: lmb.nama,
                 itemId, itemName: item.jenis
             })
@@ -1871,8 +2452,7 @@ async function uploadFileToDrive(lembagaId, itemId, file) {
             updateUploadProgress(100, 'Selesai!');
             setTimeout(() => showUploadProgress(false), 1000);
             return {
-                driveFileId: result.fileId,
-                driveUrl: result.fileUrl,
+                driveFileId: result.fileId, driveUrl: result.fileUrl,
                 name: file.name, size: file.size, type: file.type,
                 date: new Date().toISOString()
             };
@@ -1890,17 +2470,13 @@ async function deleteFileFromDrive(fileId) {
     if (!config.apiUrl) return false;
     try {
         const response = await fetch(config.apiUrl, {
-            method: 'POST',
-            mode: 'cors',
+            method: 'POST', mode: 'cors',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({ action: 'delete', fileId })
         });
         const result = await response.json();
         return result.status === 'success';
-    } catch (err) {
-        showToast('Error hapus: ' + err.message, 'error');
-        return false;
-    }
+    } catch (err) { return false; }
 }
 
 function fileToBase64(file) {
@@ -1926,14 +2502,784 @@ function updateUploadProgress(percent, text) {
     if (text) document.getElementById('uploadInfo').textContent = text;
 }
 
+function showLoading(show, msg = '') {
+    const el = document.getElementById('loadingOverlay');
+    if (show) {
+        el.classList.add('active');
+        if (msg) document.getElementById('loadingMsg').textContent = msg;
+    } else { el.classList.remove('active'); }
+}
+
 function openDriveFolder() {
     if (!config.apiUrl) { showToast('Konfigurasi belum diatur', 'error'); return; }
     window.open(config.apiUrl + '?action=openFolder', '_blank');
 }
 
-// ============ RENDER SIDEBAR ============
+// ============ PUBLIC DASHBOARD ============
+function renderPublicDashboard() {
+    const container = document.getElementById('publicDashboard');
+    if (!container) return;
+    
+    const data = getData();
+    const visibleLembaga = lembagaList; // semua 77 lembaga
+    const totalLembaga = visibleLembaga.length;
+
+    let totalChecked = 0, totalFiles = 0, completeCount = 0, emptyCount = 0;
+    let sumPercent = 0;
+    const lembagaStats = [];
+    const jenisStats = { SDN: { total: 0, checked: 0, files: 0, complete: 0 }, SDS: { total: 0, checked: 0, files: 0, complete: 0 } };
+
+    visibleLembaga.forEach(lmb => {
+        const lmbData = data[lmb.id] || { checked: [], files: {} };
+        const checked = lmbData.checked.length;
+        const files = Object.values(lmbData.files).reduce((sum, arr) => sum + arr.length, 0);
+        const percent = Math.round((checked / 27) * 100);
+        
+        totalChecked += checked;
+        totalFiles += files;
+        sumPercent += percent;
+        
+        if (checked === 27) completeCount++;
+        if (checked === 0) emptyCount++;
+        
+        lembagaStats.push({ id: lmb.id, kode: lmb.kode, nama: lmb.nama, jenis: lmb.jenis, checked, files, percent });
+        
+        jenisStats[lmb.jenis].total++;
+        jenisStats[lmb.jenis].checked += checked;
+        jenisStats[lmb.jenis].files += files;
+        if (checked === 27) jenisStats[lmb.jenis].complete++;
+    });
+
+    const totalItems = totalLembaga * 27;
+    const overallPercent = totalItems > 0 ? Math.round((totalChecked / totalItems) * 100) : 0;
+    const avgPercent = totalLembaga > 0 ? Math.round(sumPercent / totalLembaga) : 0;
+
+    container.innerHTML = `
+        <!-- KPI CARDS -->
+        <div class="kpi-grid">
+            <div class="kpi-card blue">
+                <span class="kpi-icon">🏫</span>
+                <div class="kpi-label">Total Lembaga</div>
+                <div class="kpi-value">${totalLembaga}</div>
+                <div class="kpi-sub">📚 27 item per lembaga</div>
+            </div>
+            <div class="kpi-card green">
+                <span class="kpi-icon">✅</span>
+                <div class="kpi-label">Lembaga Lengkap</div>
+                <div class="kpi-value">${completeCount}</div>
+                <div class="kpi-sub">
+                    <span class="kpi-trend neutral">${totalLembaga > 0 ? Math.round((completeCount / totalLembaga) * 100) : 0}%</span> dari total
+                </div>
+            </div>
+            <div class="kpi-card orange">
+                <span class="kpi-icon">📎</span>
+                <div class="kpi-label">Total File Upload</div>
+                <div class="kpi-value">${totalFiles.toLocaleString('id-ID')}</div>
+                <div class="kpi-sub">🗂️ Tersimpan di Google Drive</div>
+            </div>
+            <div class="kpi-card purple">
+                <span class="kpi-icon">📋</span>
+                <div class="kpi-label">Item Tercentang</div>
+                <div class="kpi-value">${totalChecked.toLocaleString('id-ID')}</div>
+                <div class="kpi-sub">dari ${totalItems.toLocaleString('id-ID')} item</div>
+            </div>
+            <div class="kpi-card red">
+                <span class="kpi-icon">⚠️</span>
+                <div class="kpi-label">Belum Mulai</div>
+                <div class="kpi-value">${emptyCount}</div>
+                <div class="kpi-sub">Lembaga tanpa data</div>
+            </div>
+            <div class="kpi-card teal">
+                <span class="kpi-icon">📈</span>
+                <div class="kpi-label">Rata-rata Progress</div>
+                <div class="kpi-value">${avgPercent}%</div>
+                <div class="kpi-sub">Per lembaga</div>
+            </div>
+        </div>
+
+        <!-- PROGRESS RING -->
+        <div class="progress-ring-wrapper">
+            <div class="progress-ring">
+                <svg viewBox="0 0 140 140">
+                    <defs>
+                        <linearGradient id="ringGradientPublic" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#27ae60"/>
+                            <stop offset="100%" stop-color="#2ecc71"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="ring-bg" cx="70" cy="70" r="58"></circle>
+                    <circle class="ring-fill" id="ringFillPublic" cx="70" cy="70" r="58"
+                            stroke="url(#ringGradientPublic)"
+                            stroke-dasharray="364.4" stroke-dashoffset="${364.4 - (overallPercent / 100) * 364.4}"></circle>
+                </svg>
+                <div class="ring-text">
+                    <div class="ring-percent">${overallPercent}%</div>
+                    <div class="ring-label">Progress</div>
+                </div>
+            </div>
+            <div class="progress-ring-info">
+                <h3>📊 Progress Keseluruhan</h3>
+                <p>Ringkasan kelengkapan data verifikasi TPG dari seluruh lembaga Kecamatan Sampang.</p>
+                <div class="progress-ring-stats">
+                    <div class="progress-ring-stat">
+                        <div class="num">${totalChecked.toLocaleString('id-ID')}</div>
+                        <div class="lbl">Tercentang</div>
+                    </div>
+                    <div class="progress-ring-stat">
+                        <div class="num">${totalFiles.toLocaleString('id-ID')}</div>
+                        <div class="lbl">File</div>
+                    </div>
+                    <div class="progress-ring-stat">
+                        <div class="num">${completeCount}</div>
+                        <div class="lbl">Lengkap</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INSIGHT CARDS -->
+        <div class="insight-grid" id="publicInsightGrid"></div>
+
+        <!-- CHARTS -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h3>📊 Progress per Jenis Sekolah</h3>
+                <canvas id="publicChartJenis"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>🏆 Top 10 Lembaga Terbaik</h3>
+                <canvas id="publicChartTop10"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📉 Distribusi Progress Lembaga</h3>
+                <canvas id="publicChartDistribusi"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📋 10 Item Paling & Kurang Terisi</h3>
+                <canvas id="publicChartItems"></canvas>
+            </div>
+        </div>
+
+        <!-- HEATMAP -->
+        <div class="heatmap-wrapper">
+            <h3>🔥 Heatmap Progress 77 Lembaga</h3>
+            <div class="heatmap" id="publicHeatmap"></div>
+            <div class="heatmap-legend">
+                <span>Rendah</span>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#f0f2f5"></div>0%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#fee2e2"></div>1-20%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#fed7aa"></div>21-40%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#fef08a"></div>41-60%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#bbf7d0"></div>61-99%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#16a34a"></div>100%</div>
+                <span>Tinggi</span>
+            </div>
+        </div>
+
+        <!-- TABLE RINGKASAN -->
+        <div class="dashboard-section">
+            <h3>🏫 Ringkasan Progress per Lembaga</h3>
+            <div class="dashboard-filter-bar">
+                <label>Urutkan:</label>
+                <select id="publicSortLembaga">
+                    <option value="no">Nomor Urut</option>
+                    <option value="pct-desc">Progress Tertinggi</option>
+                    <option value="pct-asc">Progress Terendah</option>
+                    <option value="name">Nama Lembaga</option>
+                </select>
+                <select id="publicFilterJenis">
+                    <option value="all">Semua Jenis</option>
+                    <option value="SDN">UPTD SDN</option>
+                    <option value="SDS">SDS (Swasta)</option>
+                </select>
+                <input type="text" id="publicSearchLembaga" placeholder="Cari lembaga..." style="min-width:180px;">
+            </div>
+            <div style="max-height:500px; overflow-y:auto; border:1px solid #eee; border-radius:8px;">
+                <table class="lembaga-summary-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Kode</th>
+                            <th>Nama Lembaga</th>
+                            <th>Checklist</th>
+                            <th>File</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody id="publicLembagaBody"></tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    renderInsights(lembagaStats, jenisStats, totalLembaga, completeCount, emptyCount, totalChecked, totalFiles, avgPercent, 'publicInsightGrid');
+    renderPublicCharts(jenisStats, lembagaStats, data, visibleLembaga);
+    renderHeatmap(lembagaStats, 'publicHeatmap');
+    renderPublicLembagaTable(lembagaStats);
+}
+
+function renderInsights(lembagaStats, jenisStats, total, complete, empty, checked, files, avgPct, targetId = 'insightGrid') {
+    const grid = document.getElementById(targetId);
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    const insights = [];
+    
+    const topLembaga = [...lembagaStats].sort((a, b) => b.percent - a.percent)[0];
+    if (topLembaga && topLembaga.percent > 0) {
+        insights.push({
+            type: 'success', icon: '🏆', title: 'Lembaga Terbaik',
+            text: `<strong>${topLembaga.nama}</strong> dengan progress <strong>${topLembaga.percent}%</strong> (${topLembaga.checked}/27 item).`
+        });
+    }
+    
+    if (empty > 0) {
+        insights.push({
+            type: 'danger', icon: '⚠️', title: `${empty} Lembaga Belum Mulai`,
+            text: `Ada <strong>${empty} lembaga</strong> yang belum mengisi data sama sekali.`
+        });
+    } else {
+        insights.push({
+            type: 'success', icon: '✅', title: 'Semua Lembaga Sudah Mulai',
+            text: `Seluruh <strong>${total} lembaga</strong> telah mengisi minimal 1 data.`
+        });
+    }
+    
+    const sdnPct = jenisStats.SDN.total > 0 ? Math.round((jenisStats.SDN.checked / (jenisStats.SDN.total * 27)) * 100) : 0;
+    const sdsPct = jenisStats.SDS.total > 0 ? Math.round((jenisStats.SDS.checked / (jenisStats.SDS.total * 27)) * 100) : 0;
+    if (sdnPct > sdsPct) {
+        insights.push({ type: 'info', icon: '📊', title: 'SDN Lebih Unggul', text: `SDN <strong>${sdnPct}%</strong> vs SDS <strong>${sdsPct}%</strong>. Selisih ${sdnPct - sdsPct}%.` });
+    } else if (sdsPct > sdnPct) {
+        insights.push({ type: 'info', icon: '📊', title: 'SDS Lebih Unggul', text: `SDS <strong>${sdsPct}%</strong> vs SDN <strong>${sdnPct}%</strong>. Selisih ${sdsPct - sdnPct}%.` });
+    }
+    
+    if (files > 0) {
+        insights.push({ type: 'info', icon: '📎', title: 'Total File Terupload',
+            text: `<strong>${files.toLocaleString('id-ID')} file</strong> di Google Drive (rata-rata <strong>${(files / total).toFixed(1)} file</strong>/lembaga).` });
+    }
+    
+    let avgType = 'info', avgText = '';
+    if (avgPct >= 80) { avgType = 'success'; avgText = `Rata-rata <strong>${avgPct}%</strong> — sangat baik!`; }
+    else if (avgPct >= 50) { avgType = 'info'; avgText = `Rata-rata <strong>${avgPct}%</strong> — cukup baik.`; }
+    else if (avgPct >= 25) { avgType = 'warning'; avgText = `Rata-rata <strong>${avgPct}%</strong> — perlu perbaikan.`; }
+    else { avgType = 'danger'; avgText = `Rata-rata <strong>${avgPct}%</strong> — perlu perhatian serius.`; }
+    insights.push({ type: avgType, icon: '📈', title: 'Rata-rata Keseluruhan', text: avgText });
+    
+    const startedLembaga = lembagaStats.filter(l => l.checked > 0);
+    if (startedLembaga.length > 0) {
+        const lowest = [...startedLembaga].sort((a, b) => a.percent - b.percent)[0];
+        insights.push({ type: 'warning', icon: '📉', title: 'Perlu Perhatian',
+            text: `<strong>${lowest.nama}</strong> baru mencapai <strong>${lowest.percent}%</strong> (${lowest.checked}/27).` });
+    }
+    
+    insights.slice(0, 6).forEach(ins => {
+        const card = document.createElement('div');
+        card.className = 'insight-card ' + ins.type;
+        card.innerHTML = `
+            <div class="insight-icon">${ins.icon}</div>
+            <div class="insight-body">
+                <div class="insight-title">${ins.title}</div>
+                <div class="insight-text">${ins.text}</div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function renderPublicCharts(jenisStats, lembagaStats, data, visibleLembaga) {
+    // Chart 1: Jenis
+    const ctx1 = document.getElementById('publicChartJenis');
+    if (ctx1) {
+        if (charts.publicJenis) charts.publicJenis.destroy();
+        const sdnPct = jenisStats.SDN.total > 0 ? Math.round((jenisStats.SDN.checked / (jenisStats.SDN.total * 27)) * 100) : 0;
+        const sdsPct = jenisStats.SDS.total > 0 ? Math.round((jenisStats.SDS.checked / (jenisStats.SDS.total * 27)) * 100) : 0;
+        charts.publicJenis = new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: [`UPTD SDN (${jenisStats.SDN.total})`, `SDS (${jenisStats.SDS.total})`],
+                datasets: [{
+                    data: [sdnPct, sdsPct],
+                    backgroundColor: ['#2a5298', '#f39c12'],
+                    borderWidth: 3, borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+                    tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}%` } }
+                },
+                cutout: '65%'
+            }
+        });
+    }
+
+    // Chart 2: Top 10
+    const ctx2 = document.getElementById('publicChartTop10');
+    if (ctx2) {
+        if (charts.publicTop10) charts.publicTop10.destroy();
+        const sorted = [...lembagaStats].sort((a, b) => b.percent - a.percent).slice(0, 10);
+        charts.publicTop10 = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: sorted.map(l => l.nama.length > 22 ? l.nama.substring(0, 22) + '...' : l.nama),
+                datasets: [{
+                    label: 'Progress (%)',
+                    data: sorted.map(l => l.percent),
+                    backgroundColor: sorted.map(l => l.percent === 100 ? '#27ae60' : l.percent >= 70 ? '#2ecc71' : l.percent >= 40 ? '#f39c12' : '#e74c3c'),
+                    borderRadius: 6, barThickness: 14
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => {
+                        const item = sorted[ctx.dataIndex];
+                        return ` ${item.percent}% (${item.checked}/27)`;
+                    } } }
+                },
+                scales: {
+                    x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%', font: { size: 10 } } },
+                    y: { ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    // Chart 3: Distribusi
+    const ctx3 = document.getElementById('publicChartDistribusi');
+    if (ctx3) {
+        if (charts.publicDistribusi) charts.publicDistribusi.destroy();
+        const buckets = { '0%': 0, '1-25%': 0, '26-50%': 0, '51-75%': 0, '76-99%': 0, '100%': 0 };
+        lembagaStats.forEach(l => {
+            if (l.percent === 0) buckets['0%']++;
+            else if (l.percent <= 25) buckets['1-25%']++;
+            else if (l.percent <= 50) buckets['26-50%']++;
+            else if (l.percent <= 75) buckets['51-75%']++;
+            else if (l.percent < 100) buckets['76-99%']++;
+            else buckets['100%']++;
+        });
+        charts.publicDistribusi = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(buckets),
+                datasets: [{
+                    label: 'Jumlah Lembaga',
+                    data: Object.values(buckets),
+                    backgroundColor: ['#e74c3c', '#e67e22', '#f39c12', '#f1c40f', '#2ecc71', '#27ae60'],
+                    borderRadius: 8, barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} lembaga` } }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 5, font: { size: 10 } } },
+                    x: { ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    // Chart 4: Items
+    const ctx4 = document.getElementById('publicChartItems');
+    if (ctx4) {
+        if (charts.publicItems) charts.publicItems.destroy();
+        const itemCounts = dataItems.map(item => {
+            let count = 0;
+            visibleLembaga.forEach(lmb => {
+                const lmbData = data[lmb.id] || { checked: [], files: {} };
+                if (lmbData.checked.includes(item.no)) count++;
+            });
+            return { no: item.no, jenis: item.jenis, count, pct: Math.round((count / visibleLembaga.length) * 100) };
+        });
+        const sorted = [...itemCounts].sort((a, b) => b.pct - a.pct);
+        const display = [...sorted.slice(0, 5), ...sorted.slice(-5).reverse()];
+        charts.publicItems = new Chart(ctx4, {
+            type: 'bar',
+            data: {
+                labels: display.map(i => `#${i.no} ${i.jenis.length > 18 ? i.jenis.substring(0, 18) + '...' : i.jenis}`),
+                datasets: [{
+                    label: 'Terisi (%)',
+                    data: display.map(i => i.pct),
+                    backgroundColor: display.map((i, idx) => idx < 5 ? '#27ae60' : '#e74c3c'),
+                    borderRadius: 6, barThickness: 12
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => {
+                        const item = display[ctx.dataIndex];
+                        return ` ${item.pct}% (${item.count}/${visibleLembaga.length})`;
+                    } } }
+                },
+                scales: {
+                    x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%', font: { size: 10 } } },
+                    y: { ticks: { font: { size: 9 } } }
+                }
+            }
+        });
+    }
+}
+
+function renderHeatmap(lembagaStats, targetId = 'heatmap') {
+    const heatmap = document.getElementById(targetId);
+    if (!heatmap) return;
+    heatmap.innerHTML = '';
+    const sorted = [...lembagaStats].sort((a, b) => a.kode.localeCompare(b.kode));
+    sorted.forEach(lmb => {
+        const cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        let level = 0;
+        if (lmb.percent === 0) level = 0;
+        else if (lmb.percent <= 20) level = 1;
+        else if (lmb.percent <= 40) level = 2;
+        else if (lmb.percent <= 60) level = 3;
+        else if (lmb.percent < 100) level = 4;
+        else level = 5;
+        cell.setAttribute('data-level', level);
+        cell.title = `${lmb.nama}\n📊 ${lmb.percent}% (${lmb.checked}/27)\n📎 ${lmb.files} file`;
+        heatmap.appendChild(cell);
+    });
+}
+
+function renderPublicLembagaTable(lembagaStats) {
+    const tbody = document.getElementById('publicLembagaBody');
+    if (!tbody) return;
+    
+    const sortBy = document.getElementById('publicSortLembaga')?.value || 'no';
+    const filterJenis = document.getElementById('publicFilterJenis')?.value || 'all';
+    const searchLmb = (document.getElementById('publicSearchLembaga')?.value || '').toLowerCase();
+    
+    let list = [...lembagaStats];
+    if (filterJenis !== 'all') list = list.filter(l => l.jenis === filterJenis);
+    if (searchLmb) list = list.filter(l => l.nama.toLowerCase().includes(searchLmb) || l.kode.toLowerCase().includes(searchLmb));
+    
+    if (sortBy === 'pct-desc') list.sort((a, b) => b.percent - a.percent);
+    else if (sortBy === 'pct-asc') list.sort((a, b) => a.percent - b.percent);
+    else if (sortBy === 'name') list.sort((a, b) => a.nama.localeCompare(b.nama));
+    
+    const rankMap = {};
+    if (sortBy === 'pct-desc') {
+        [...list].sort((a, b) => b.percent - a.percent).forEach((l, i) => rankMap[l.id] = i + 1);
+    }
+    
+    tbody.innerHTML = '';
+    list.forEach((lmb, idx) => {
+        let statusClass = 'status-empty';
+        if (lmb.checked === 27) statusClass = 'status-done';
+        else if (lmb.checked > 0) statusClass = 'status-progress';
+        
+        let rankBadge = '';
+        if (sortBy === 'pct-desc' && rankMap[lmb.id] <= 3) {
+            rankBadge = `<span class="rank-badge top${rankMap[lmb.id]}">${rankMap[lmb.id]}</span>`;
+        } else if (sortBy === 'pct-desc') {
+            rankBadge = `<span class="rank-badge">${rankMap[lmb.id]}</span>`;
+        } else {
+            rankBadge = `<span class="rank-badge">${idx + 1}</span>`;
+        }
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${rankBadge}</td>
+            <td><strong>${lmb.kode}</strong></td>
+            <td>${lmb.nama} <span class="type-badge ${lmb.jenis.toLowerCase()}">${lmb.jenis}</span></td>
+            <td>${lmb.checked}/27</td>
+            <td>📎 ${lmb.files}</td>
+            <td>
+                <span class="progress-mini-bar"><span class="progress-mini-fill" style="width:${lmb.percent}%"></span></span>
+                <span class="${statusClass}">${lmb.percent}%</span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;font-style:italic;">Tidak ada lembaga yang cocok.</td></tr>';
+    }
+    
+    // Attach event listeners
+    const sortEl = document.getElementById('publicSortLembaga');
+    if (sortEl && !sortEl.dataset.bound) {
+        sortEl.dataset.bound = '1';
+        sortEl.addEventListener('change', () => renderPublicDashboard());
+    }
+    const filterEl = document.getElementById('publicFilterJenis');
+    if (filterEl && !filterEl.dataset.bound) {
+        filterEl.dataset.bound = '1';
+        filterEl.addEventListener('change', () => renderPublicDashboard());
+    }
+    const searchEl = document.getElementById('publicSearchLembaga');
+    if (searchEl && !searchEl.dataset.bound) {
+        searchEl.dataset.bound = '1';
+        searchEl.addEventListener('input', () => renderPublicDashboard());
+    }
+}
+
+// ============ PRIVATE DASHBOARD (sama seperti public tapi data sesuai role) ============
+function renderPrivateDashboard() {
+    // Untuk private, kita bisa gunakan ID yang sama dengan public, tapi dengan prefix "private"
+    const container = document.getElementById('privateDashboard');
+    if (!container) return;
+    
+    const data = getData();
+    const visibleLembaga = (session && session.role === 'lembaga') 
+        ? lembagaList.filter(l => l.id === session.lembagaId) 
+        : lembagaList;
+    const totalLembaga = visibleLembaga.length;
+
+    let totalChecked = 0, totalFiles = 0, completeCount = 0, emptyCount = 0;
+    let sumPercent = 0;
+    const lembagaStats = [];
+    const jenisStats = { SDN: { total: 0, checked: 0, files: 0, complete: 0 }, SDS: { total: 0, checked: 0, files: 0, complete: 0 } };
+
+    visibleLembaga.forEach(lmb => {
+        const lmbData = data[lmb.id] || { checked: [], files: {} };
+        const checked = lmbData.checked.length;
+        const files = Object.values(lmbData.files).reduce((sum, arr) => sum + arr.length, 0);
+        const percent = Math.round((checked / 27) * 100);
+        totalChecked += checked;
+        totalFiles += files;
+        sumPercent += percent;
+        if (checked === 27) completeCount++;
+        if (checked === 0) emptyCount++;
+        lembagaStats.push({ id: lmb.id, kode: lmb.kode, nama: lmb.nama, jenis: lmb.jenis, checked, files, percent });
+        jenisStats[lmb.jenis].total++;
+        jenisStats[lmb.jenis].checked += checked;
+        jenisStats[lmb.jenis].files += files;
+        if (checked === 27) jenisStats[lmb.jenis].complete++;
+    });
+
+    const totalItems = totalLembaga * 27;
+    const overallPercent = totalItems > 0 ? Math.round((totalChecked / totalItems) * 100) : 0;
+    const avgPercent = totalLembaga > 0 ? Math.round(sumPercent / totalLembaga) : 0;
+
+    container.innerHTML = `
+        <div class="kpi-grid">
+            <div class="kpi-card blue">
+                <span class="kpi-icon">🏫</span>
+                <div class="kpi-label">Total Lembaga</div>
+                <div class="kpi-value">${totalLembaga}</div>
+            </div>
+            <div class="kpi-card green">
+                <span class="kpi-icon">✅</span>
+                <div class="kpi-label">Lembaga Lengkap</div>
+                <div class="kpi-value">${completeCount}</div>
+            </div>
+            <div class="kpi-card orange">
+                <span class="kpi-icon">📎</span>
+                <div class="kpi-label">Total File</div>
+                <div class="kpi-value">${totalFiles.toLocaleString('id-ID')}</div>
+            </div>
+            <div class="kpi-card purple">
+                <span class="kpi-icon">📋</span>
+                <div class="kpi-label">Item Tercentang</div>
+                <div class="kpi-value">${totalChecked.toLocaleString('id-ID')}</div>
+            </div>
+            <div class="kpi-card red">
+                <span class="kpi-icon">⚠️</span>
+                <div class="kpi-label">Belum Mulai</div>
+                <div class="kpi-value">${emptyCount}</div>
+            </div>
+            <div class="kpi-card teal">
+                <span class="kpi-icon">📈</span>
+                <div class="kpi-label">Rata-rata</div>
+                <div class="kpi-value">${avgPercent}%</div>
+            </div>
+        </div>
+
+        <div class="progress-ring-wrapper">
+            <div class="progress-ring">
+                <svg viewBox="0 0 140 140">
+                    <defs>
+                        <linearGradient id="ringGradientPrivate" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#27ae60"/>
+                            <stop offset="100%" stop-color="#2ecc71"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="ring-bg" cx="70" cy="70" r="58"></circle>
+                    <circle class="ring-fill" cx="70" cy="70" r="58"
+                            stroke="url(#ringGradientPrivate)"
+                            stroke-dasharray="364.4" stroke-dashoffset="${364.4 - (overallPercent / 100) * 364.4}"></circle>
+                </svg>
+                <div class="ring-text">
+                    <div class="ring-percent">${overallPercent}%</div>
+                    <div class="ring-label">Progress</div>
+                </div>
+            </div>
+            <div class="progress-ring-info">
+                <h3>📊 Progress Keseluruhan</h3>
+                <p>Ringkasan kelengkapan data verifikasi TPG.</p>
+                <div class="progress-ring-stats">
+                    <div class="progress-ring-stat">
+                        <div class="num">${totalChecked.toLocaleString('id-ID')}</div>
+                        <div class="lbl">Tercentang</div>
+                    </div>
+                    <div class="progress-ring-stat">
+                        <div class="num">${totalFiles.toLocaleString('id-ID')}</div>
+                        <div class="lbl">File</div>
+                    </div>
+                    <div class="progress-ring-stat">
+                        <div class="num">${completeCount}</div>
+                        <div class="lbl">Lengkap</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="insight-grid" id="privateInsightGrid"></div>
+
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h3>📊 Progress per Jenis Sekolah</h3>
+                <canvas id="privateChartJenis"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>🏆 Top 10 Lembaga Terbaik</h3>
+                <canvas id="privateChartTop10"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📉 Distribusi Progress Lembaga</h3>
+                <canvas id="privateChartDistribusi"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📋 10 Item Paling & Kurang Terisi</h3>
+                <canvas id="privateChartItems"></canvas>
+            </div>
+        </div>
+
+        <div class="heatmap-wrapper">
+            <h3>🔥 Heatmap Progress Lembaga</h3>
+            <div class="heatmap" id="privateHeatmap"></div>
+            <div class="heatmap-legend">
+                <span>Rendah</span>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#f0f2f5"></div>0%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#fee2e2"></div>1-20%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#fed7aa"></div>21-40%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#fef08a"></div>41-60%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#bbf7d0"></div>61-99%</div>
+                <div class="heatmap-legend-item"><div class="heatmap-legend-box" style="background:#16a34a"></div>100%</div>
+                <span>Tinggi</span>
+            </div>
+        </div>
+    `;
+    
+    renderInsights(lembagaStats, jenisStats, totalLembaga, completeCount, emptyCount, totalChecked, totalFiles, avgPercent, 'privateInsightGrid');
+    renderPrivateCharts(jenisStats, lembagaStats, data, visibleLembaga);
+    renderHeatmap(lembagaStats, 'privateHeatmap');
+}
+
+function renderPrivateCharts(jenisStats, lembagaStats, data, visibleLembaga) {
+    // Reuse logic yang sama dengan public
+    const ctx1 = document.getElementById('privateChartJenis');
+    if (ctx1) {
+        if (charts.privateJenis) charts.privateJenis.destroy();
+        const sdnPct = jenisStats.SDN.total > 0 ? Math.round((jenisStats.SDN.checked / (jenisStats.SDN.total * 27)) * 100) : 0;
+        const sdsPct = jenisStats.SDS.total > 0 ? Math.round((jenisStats.SDS.checked / (jenisStats.SDS.total * 27)) * 100) : 0;
+        charts.privateJenis = new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: [`UPTD SDN (${jenisStats.SDN.total})`, `SDS (${jenisStats.SDS.total})`],
+                datasets: [{ data: [sdnPct, sdsPct], backgroundColor: ['#2a5298', '#f39c12'], borderWidth: 3, borderColor: '#fff' }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '65%' }
+        });
+    }
+
+    const ctx2 = document.getElementById('privateChartTop10');
+    if (ctx2) {
+        if (charts.privateTop10) charts.privateTop10.destroy();
+        const sorted = [...lembagaStats].sort((a, b) => b.percent - a.percent).slice(0, 10);
+        charts.privateTop10 = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: sorted.map(l => l.nama.length > 22 ? l.nama.substring(0, 22) + '...' : l.nama),
+                datasets: [{
+                    label: 'Progress (%)', data: sorted.map(l => l.percent),
+                    backgroundColor: sorted.map(l => l.percent === 100 ? '#27ae60' : l.percent >= 70 ? '#2ecc71' : l.percent >= 40 ? '#f39c12' : '#e74c3c'),
+                    borderRadius: 6, barThickness: 14
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+            }
+        });
+    }
+
+    const ctx3 = document.getElementById('privateChartDistribusi');
+    if (ctx3) {
+        if (charts.privateDistribusi) charts.privateDistribusi.destroy();
+        const buckets = { '0%': 0, '1-25%': 0, '26-50%': 0, '51-75%': 0, '76-99%': 0, '100%': 0 };
+        lembagaStats.forEach(l => {
+            if (l.percent === 0) buckets['0%']++;
+            else if (l.percent <= 25) buckets['1-25%']++;
+            else if (l.percent <= 50) buckets['26-50%']++;
+            else if (l.percent <= 75) buckets['51-75%']++;
+            else if (l.percent < 100) buckets['76-99%']++;
+            else buckets['100%']++;
+        });
+        charts.privateDistribusi = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(buckets),
+                datasets: [{
+                    label: 'Jumlah', data: Object.values(buckets),
+                    backgroundColor: ['#e74c3c', '#e67e22', '#f39c12', '#f1c40f', '#2ecc71', '#27ae60'],
+                    borderRadius: 8, barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 5 } } }
+            }
+        });
+    }
+
+    const ctx4 = document.getElementById('privateChartItems');
+    if (ctx4) {
+        if (charts.privateItems) charts.privateItems.destroy();
+        const itemCounts = dataItems.map(item => {
+            let count = 0;
+            visibleLembaga.forEach(lmb => {
+                const lmbData = data[lmb.id] || { checked: [], files: {} };
+                if (lmbData.checked.includes(item.no)) count++;
+            });
+            return { no: item.no, jenis: item.jenis, count, pct: Math.round((count / visibleLembaga.length) * 100) };
+        });
+        const sorted = [...itemCounts].sort((a, b) => b.pct - a.pct);
+        const display = [...sorted.slice(0, 5), ...sorted.slice(-5).reverse()];
+        charts.privateItems = new Chart(ctx4, {
+            type: 'bar',
+            data: {
+                labels: display.map(i => `#${i.no} ${i.jenis.substring(0, 18)}`),
+                datasets: [{
+                    label: 'Terisi (%)', data: display.map(i => i.pct),
+                    backgroundColor: display.map((i, idx) => idx < 5 ? '#27ae60' : '#e74c3c'),
+                    borderRadius: 6, barThickness: 12
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+            }
+        });
+    }
+}
+
+// ============ SIDEBAR (PRIVATE) ============
 function renderLembagaList() {
     const list = document.getElementById('lembagaList');
+    if (!list) return;
     const search = document.getElementById('searchLembaga').value.toLowerCase();
     const data = getData();
     list.innerHTML = '';
@@ -1954,7 +3300,6 @@ function renderLembagaList() {
         const checkedCount = lmbData.checked.length;
         const percent = Math.round((checkedCount / 27) * 100);
         const fileCount = Object.values(lmbData.files).reduce((sum, arr) => sum + arr.length, 0);
-
         if (checkedCount === 27) completeCount++;
 
         const item = document.createElement('div');
@@ -1966,7 +3311,7 @@ function renderLembagaList() {
                 <span class="type-badge ${lmb.jenis.toLowerCase()}">${lmb.jenis}</span>
             </div>
             <div class="meta">
-                <span> ${lmb.kecamatan}</span>
+                <span>📍 ${lmb.kecamatan}</span>
                 <span>${checkedCount}/27 • 📎 ${fileCount}</span>
             </div>
             <div class="progress-mini">
@@ -1976,162 +3321,16 @@ function renderLembagaList() {
         list.appendChild(item);
     });
 
-    document.getElementById('completeLembaga').textContent = completeCount;
-    updateOverallStats();
-}
-
-function updateOverallStats() {
-    const data = getData();
-    let totalFiles = 0, totalChecked = 0;
-    const visibleLembaga = (session && session.role === 'lembaga') 
-        ? lembagaList.filter(l => l.id === session.lembagaId) 
-        : lembagaList;
-    const total = visibleLembaga.length * 27;
-
-    visibleLembaga.forEach(lmb => {
-        const lmbData = data[lmb.id] || { checked: [], files: {} };
-        totalChecked += lmbData.checked.length;
-        Object.values(lmbData.files).forEach(arr => totalFiles += arr.length);
-    });
-
-    document.getElementById('totalFiles').textContent = totalFiles;
-    document.getElementById('overallProgress').textContent = Math.round((totalChecked / total) * 100) + '%';
-}
-
-// ============ RENDER DASHBOARD ============
-function renderDashboard() {
-    const data = getData();
-    const visibleLembaga = (session && session.role === 'lembaga') 
-        ? lembagaList.filter(l => l.id === session.lembagaId) 
-        : lembagaList;
-    const totalLembaga = visibleLembaga.length;
-
-    // 1. Overall progress
-    let totalChecked = 0;
-    visibleLembaga.forEach(lmb => {
-        const lmbData = data[lmb.id] || { checked: [], files: {} };
-        totalChecked += lmbData.checked.length;
-    });
-    const totalItems = totalLembaga * 27;
-    const overallPercent = totalItems > 0 ? Math.round((totalChecked / totalItems) * 100) : 0;
-
-    document.getElementById('overallItemProgressText').textContent = `${totalChecked} / ${totalItems}`;
-    const fill = document.getElementById('overallItemProgressFill');
-    fill.style.width = overallPercent + '%';
-    fill.textContent = overallPercent + '%';
-
-    // 2. Per-item progress
-    const itemGrid = document.getElementById('itemProgressGrid');
-    itemGrid.innerHTML = '';
-    dataItems.forEach(item => {
-        let count = 0;
-        visibleLembaga.forEach(lmb => {
-            const lmbData = data[lmb.id] || { checked: [], files: {} };
-            if (lmbData.checked.includes(item.no)) count++;
-        });
-        const percent = totalLembaga > 0 ? Math.round((count / totalLembaga) * 100) : 0;
-
-        const card = document.createElement('div');
-        card.className = 'item-progress-card';
-        card.innerHTML = `
-            <div class="item-title">
-                <span><span class="no-badge">${item.no}</span>${item.jenis}</span>
-                <span class="item-count">${count}/${totalLembaga}</span>
-            </div>
-            <div class="item-bar">
-                <div class="item-bar-fill" style="width:${percent}%"></div>
-            </div>
-        `;
-        itemGrid.appendChild(card);
-    });
-
-    // 3. Per-lembaga summary table
-    const tbody = document.getElementById('lembagaSummaryBody');
-    tbody.innerHTML = '';
-    visibleLembaga.forEach((lmb, idx) => {
-        const lmbData = data[lmb.id] || { checked: [], files: {} };
-        const checked = lmbData.checked.length;
-        const fileCount = Object.values(lmbData.files).reduce((sum, arr) => sum + arr.length, 0);
-        const percent = Math.round((checked / 27) * 100);
-
-        let statusClass = 'status-empty';
-        if (checked === 27) { statusClass = 'status-done'; }
-        else if (checked > 0) { statusClass = 'status-progress'; }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${idx+1}</td>
-            <td>${lmb.kode}</td>
-            <td>${lmb.nama}</td>
-            <td>${checked}/27</td>
-            <td>${fileCount}</td>
-            <td>
-                <span class="progress-mini-bar"><span class="progress-mini-fill" style="width:${percent}%"></span></span>
-                <span class="${statusClass}">${percent}%</span>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    // 4. File rekap (tab files)
-    renderFileRekap();
-}
-
-function renderFileRekap() {
-    const data = getData();
-    const visibleLembaga = (session && session.role === 'lembaga') 
-        ? lembagaList.filter(l => l.id === session.lembagaId) 
-        : lembagaList;
-
-    const grid = document.getElementById('fileViewerGrid');
-    grid.innerHTML = '';
-
-    dataItems.forEach(item => {
-        // Kumpulkan file dari semua lembaga untuk item ini
-        const files = [];
-        visibleLembaga.forEach(lmb => {
-            const lmbData = data[lmb.id] || { checked: [], files: {} };
-            const itemFiles = lmbData.files[item.no] || [];
-            itemFiles.forEach(f => {
-                files.push({
-                    ...f,
-                    lembagaNama: lmb.nama,
-                    lembagaKode: lmb.kode
-                });
-            });
-        });
-
-        const card = document.createElement('div');
-        card.className = 'file-viewer-card';
-        card.innerHTML = `
-            <div class="fv-title">
-                <span><span class="no-badge" style="background:#2a5298;color:white;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;margin-right:6px;">${item.no}</span>${item.jenis}</span>
-                <span style="font-size:0.7rem;color:#666;">${files.length} file</span>
-            </div>
-            <div class="fv-list">
-                ${files.length === 0 ? '<div class="fv-empty">Belum ada file</div>' : 
-                  files.map(f => `
-                    <div class="fv-item">
-                        <span>📎</span>
-                        <span class="fv-name" title="${f.name} • ${f.lembagaNama}">${f.name}</span>
-                        <span class="fv-size">${formatSize(f.size)}</span>
-                        ${f.driveUrl ? `<a href="${f.driveUrl}" target="_blank" class="fv-action" title="Buka di Drive">🔗</a>` : ''}
-                        <span style="font-size:0.6rem;color:#888;">${f.lembagaKode}</span>
-                    </div>
-                  `).join('')}
-            </div>
-        `;
-        grid.appendChild(card);
-    });
+    const completeEl = document.getElementById('completeLembaga');
+    if (completeEl) completeEl.textContent = completeCount;
 }
 
 // ============ LEMBAGA DETAIL ============
 function selectLembaga(lembagaId) {
     if (session && session.role === 'lembaga' && lembagaId !== session.lembagaId) {
-        showToast(' Anda hanya dapat mengakses data sekolah sendiri', 'error');
+        showToast('⛔ Anda hanya dapat mengakses data sekolah sendiri', 'error');
         return;
     }
-    
     currentLembagaId = lembagaId;
     const lmb = lembagaList.find(l => l.id === lembagaId);
 
@@ -2147,6 +3346,7 @@ function selectLembaga(lembagaId) {
 
 function renderChecklist() {
     const tbody = document.getElementById('checklistBody');
+    if (!tbody) return;
     const lmbData = getLembagaData(currentLembagaId);
     tbody.innerHTML = '';
 
@@ -2175,26 +3375,26 @@ function renderChecklist() {
                     <div class="btn-row">
                         <button class="upload-btn" id="uploadBtn_${item.no}" 
                                 onclick="triggerUpload(${item.no})" 
-                                ${!isChecked ? 'disabled title="Centang checklist dulu"' : ''}>
-                             Upload
+                                ${!isChecked ? 'disabled' : ''}>
+                            📤 Upload
                         </button>
                         <button class="upload-btn view ${fileCount === 0 ? 'view-disabled' : ''}" 
                                 onclick="openFileViewer(${item.no})"
-                                ${fileCount === 0 ? 'disabled title="Belum ada file"' : ''}>
+                                ${fileCount === 0 ? 'disabled' : ''}>
                             👁️ Lihat (${fileCount})
                         </button>
                     </div>
                     <input type="file" id="fileInput_${item.no}" multiple style="display:none" 
                            onchange="handleFileUpload(${item.no}, event)">
                     <div class="file-list">
-                        ${files.length === 0 ? '<span class="empty-files">Belum ada file di Drive</span>' : 
+                        ${files.length === 0 ? '<span class="empty-files">Belum ada file</span>' : 
                           files.map(f => `
                             <div class="file-item">
                                 <span>📎</span>
                                 <span class="file-name" title="${f.name}">${f.name}</span>
                                 <span class="file-size">${formatSize(f.size)}</span>
-                                ${f.driveUrl ? `<a href="${f.driveUrl}" target="_blank" class="drive-link" title="Buka di Google Drive">🔗</a>` : ''}
-                                <button class="file-action delete" onclick="removeFile(${item.no}, '${f.driveFileId || ''}', '${f.name.replace(/'/g, "\\'")}')" title="Hapus">🗑️</button>
+                                ${f.driveUrl ? `<a href="${f.driveUrl}" target="_blank" class="drive-link">🔗</a>` : ''}
+                                <button class="file-action delete" onclick="removeFile(${item.no}, '${f.driveFileId || ''}', '${f.name.replace(/'/g, "\\'")}')">🗑️</button>
                             </div>
                           `).join('')}
                     </div>
@@ -2213,49 +3413,44 @@ function updateLembagaStats() {
     const fileCount = Object.values(lmbData.files).reduce((sum, arr) => sum + arr.length, 0);
     const percent = Math.round((checkedCount / 27) * 100);
 
-    document.getElementById('statChecked').textContent = `${checkedCount}/27`;
-    document.getElementById('statFiles').textContent = fileCount;
-    document.getElementById('statPercent').textContent = percent + '%';
-    document.getElementById('progressText').textContent = `${checkedCount}/27`;
+    const el = document.getElementById('statChecked');
+    if (el) {
+        el.textContent = `${checkedCount}/27`;
+        document.getElementById('statFiles').textContent = fileCount;
+        document.getElementById('statPercent').textContent = percent + '%';
+        document.getElementById('progressText').textContent = `${checkedCount}/27`;
+    }
 }
 
-// ============ FILE VIEWER MODAL ============
+// ============ FILE VIEWER ============
 function openFileViewer(itemNo) {
     const item = dataItems.find(i => i.no === itemNo);
     if (!item) return;
-
     const lmb = lembagaList.find(l => l.id === currentLembagaId);
     const lmbData = getLembagaData(currentLembagaId);
     const files = lmbData.files[itemNo] || [];
 
-    document.getElementById('fileViewerTitle').textContent = 
-        `📁 File Item ${itemNo}: ${item.jenis} — ${lmb.nama}`;
-
+    document.getElementById('fileViewerTitle').textContent = `📁 File Item ${itemNo}: ${item.jenis}`;
     const body = document.getElementById('fileViewerBody');
     if (files.length === 0) {
-        body.innerHTML = '<p style="color:#888;font-style:italic;">Belum ada file yang diupload untuk item ini.</p>';
+        body.innerHTML = '<p style="color:#888;font-style:italic;">Belum ada file.</p>';
     } else {
         body.innerHTML = `
-            <p style="font-size:0.82rem;color:#555;margin-bottom:10px;">
-                ${files.length} file ditemukan. Klik 🔗 untuk membuka di Google Drive.
-            </p>
             <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
                 <thead>
                     <tr style="background:#f0f4ff;">
-                        <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #d0d9f0;">Nama File</th>
-                        <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #d0d9f0;">Ukuran</th>
-                        <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #d0d9f0;">Tanggal</th>
-                        <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #d0d9f0;">Aksi</th>
+                        <th style="padding:6px;text-align:left;">Nama File</th>
+                        <th style="padding:6px;text-align:left;">Ukuran</th>
+                        <th style="padding:6px;text-align:center;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${files.map(f => `
                         <tr>
-                            <td style="padding:6px 8px;border-bottom:1px solid #eee;">📎 ${f.name}</td>
-                            <td style="padding:6px 8px;border-bottom:1px solid #eee;">${formatSize(f.size)}</td>
-                            <td style="padding:6px 8px;border-bottom:1px solid #eee;">${f.date ? new Date(f.date).toLocaleDateString('id-ID') : '-'}</td>
-                            <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">
-                                ${f.driveUrl ? `<a href="${f.driveUrl}" target="_blank" class="btn btn-primary" style="padding:3px 8px;font-size:0.7rem;text-decoration:none;">🔗 Buka</a>` : '<span style="color:#999;">-</span>'}
+                            <td style="padding:6px;border-bottom:1px solid #eee;">📎 ${f.name}</td>
+                            <td style="padding:6px;border-bottom:1px solid #eee;">${formatSize(f.size)}</td>
+                            <td style="padding:6px;border-bottom:1px solid #eee;text-align:center;">
+                                ${f.driveUrl ? `<a href="${f.driveUrl}" target="_blank" class="btn btn-primary" style="padding:3px 8px;font-size:0.7rem;text-decoration:none;">🔗 Buka</a>` : '-'}
                             </td>
                         </tr>
                     `).join('')}
@@ -2263,12 +3458,15 @@ function openFileViewer(itemNo) {
             </table>
         `;
     }
-
     document.getElementById('fileViewerModal').classList.add('active');
 }
 
 // ============ ACTIONS ============
-function toggleCheck(no) {
+async function toggleCheck(no) {
+    const lmbData = getLembagaData(currentLembagaId);
+    const wasChecked = lmbData.checked.includes(no);
+    const lmb = lembagaList.find(l => l.id === currentLembagaId);
+
     updateLembagaData(currentLembagaId, (data) => {
         const idx = data.checked.indexOf(no);
         if (idx > -1) data.checked.splice(idx, 1);
@@ -2276,14 +3474,33 @@ function toggleCheck(no) {
     });
     renderChecklist();
     renderLembagaList();
-    renderDashboard();
-    showToast('Status checklist diperbarui', 'success');
+    renderPrivateDashboard();
+
+    if (config.apiUrl) {
+        try {
+            updateSyncStatus('syncing', 'Menyimpan...');
+            await fetch(config.apiUrl, {
+                method: 'POST', mode: 'cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: wasChecked ? 'uncheck' : 'check',
+                    lembagaId: currentLembagaId,
+                    lembagaKode: lmb.kode,
+                    itemNo: no
+                })
+            });
+            updateSyncStatus('synced', 'Tersinkron');
+            showToast('✅ Tersimpan di server', 'success');
+        } catch (err) {
+            updateSyncStatus('error', 'Gagal sync');
+            showToast('⚠️ Tersimpan lokal', 'error');
+        }
+    }
 }
 
 function triggerUpload(no) {
     if (!config.apiUrl) {
-        showToast('Konfigurasi Google Drive belum diatur', 'error');
-        if (session.role === 'admin') openConfigModal();
+        showToast('Konfigurasi belum diatur', 'error');
         return;
     }
     document.getElementById(`fileInput_${no}`).click();
@@ -2309,22 +3526,31 @@ async function handleFileUpload(no, event) {
 
     const allData = getData();
     allData[currentLembagaId].files = lmbData.files;
+    
+    if (successCount > 0 && !lmbData.checked.includes(no)) {
+        if (!allData[currentLembagaId].checked) allData[currentLembagaId].checked = [];
+        if (!allData[currentLembagaId].checked.includes(no)) {
+            allData[currentLembagaId].checked.push(no);
+        }
+    }
+    
     saveData(allData);
-
     btn.classList.remove('uploading');
     btn.disabled = false;
     btn.innerHTML = '📤 Upload';
 
+    await syncFromServer(true);
     renderChecklist();
     renderLembagaList();
-    renderDashboard();
-    if (successCount > 0) showToast(`${successCount} file berhasil diupload`, 'success');
+    renderPrivateDashboard();
+    
+    if (successCount > 0) showToast(`✅ ${successCount} file diupload & otomatis tercentang`, 'success');
     event.target.value = '';
 }
 
 async function removeFile(itemId, fileId, fileName) {
-    if (!confirm(`Hapus "${fileName}" dari Google Drive?`)) return;
-    showToast('Menghapus file...', 'info');
+    if (!confirm(`Hapus "${fileName}"?`)) return;
+    showToast('Menghapus...', 'info');
 
     if (fileId && config.apiUrl) {
         const deleted = await deleteFileFromDrive(fileId);
@@ -2336,9 +3562,10 @@ async function removeFile(itemId, fileId, fileName) {
     allData[currentLembagaId].files[itemId] = files.filter(f => f.driveFileId !== fileId);
     saveData(allData);
 
+    await syncFromServer(true);
     renderChecklist();
     renderLembagaList();
-    renderDashboard();
+    renderPrivateDashboard();
     showToast('File dihapus', 'success');
 }
 
@@ -2350,10 +3577,7 @@ function formatSize(bytes) {
 
 // ============ EXPORT ============
 function exportSummary() {
-    if (session.role !== 'admin') {
-        showToast('⛔ Hanya admin yang dapat export rekap', 'error');
-        return;
-    }
+    if (session && session.role !== 'admin') { showToast('⛔ Hanya admin', 'error'); return; }
     const data = getData();
     let csv = 'No,Kode,Nama Lembaga,Jenis,Kecamatan,Checklist,File,Progress\n';
     lembagaList.forEach((lmb, idx) => {
@@ -2362,51 +3586,18 @@ function exportSummary() {
         const percent = Math.round((lmbData.checked.length / 27) * 100);
         csv += `${idx+1},"${lmb.kode}","${lmb.nama}","${lmb.jenis}","${lmb.kecamatan}",${lmbData.checked.length},${fileCount},${percent}\n`;
     });
-    downloadCSV(csv, `rekap_77_lembaga_${getDateStr()}.csv`);
-    showToast('Rekap diexport', 'success');
-}
-
-function downloadCSV(csv, filename) {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = filename;
+    link.download = `rekap_77_lembaga_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-}
-
-function getDateStr() { return new Date().toISOString().split('T')[0]; }
-
-// ============ PASSWORD MANAGEMENT (ADMIN) ============
-function openPasswordModal() {
-    if (session.role !== 'admin') {
-        showToast('⛔ Hanya admin', 'error');
-        return;
-    }
-    const select = document.getElementById('pwdLembagaSelect');
-    select.innerHTML = '<option value="">-- Pilih Lembaga --</option>';
-    lembagaList.forEach(lmb => {
-        const opt = document.createElement('option');
-        opt.value = lmb.kode;
-        opt.textContent = `${lmb.kode} - ${lmb.nama}`;
-        select.appendChild(opt);
-    });
-    document.getElementById('pwdBaru').value = '';
-    document.getElementById('passwordModal').classList.add('active');
-}
-
-function savePassword() {
-    const kode = document.getElementById('pwdLembagaSelect').value;
-    const pwd = document.getElementById('pwdBaru').value;
-    if (!kode) { showToast('Pilih lembaga', 'error'); return; }
-    if (pwd.length < 6) { showToast('Password min. 6 karakter', 'error'); return; }
-    setLembagaPassword(kode, pwd);
-    closeModal('passwordModal');
-    showToast(`Password ${kode} berhasil diubah`, 'success');
+    showToast('Rekap diexport', 'success');
 }
 
 // ============ TOAST ============
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
+    if (!toast) return;
     toast.textContent = message;
     toast.className = 'toast ' + type + ' show';
     setTimeout(() => toast.classList.remove('show'), 3500);
@@ -2414,7 +3605,6 @@ function showToast(message, type = 'success') {
 
 // ============ INIT ============
 function init() {
-    // Populate lembaga select for login
     const select = document.getElementById('lembagaSelect');
     lembagaList.forEach(lmb => {
         const opt = document.createElement('option');
@@ -2423,7 +3613,6 @@ function init() {
         select.appendChild(opt);
     });
 
-    // Login tabs
     document.querySelectorAll('.login-tab').forEach(tab => {
         tab.addEventListener('click', function() {
             document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
@@ -2434,7 +3623,6 @@ function init() {
         });
     });
 
-    // Filter tabs
     document.querySelectorAll('.filter-tab').forEach(tab => {
         tab.addEventListener('click', function() {
             document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -2446,18 +3634,6 @@ function init() {
 
     document.getElementById('searchLembaga').addEventListener('input', renderLembagaList);
 
-    // Dashboard tabs
-    document.querySelectorAll('#dashboardTabs button').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('#dashboardTabs button').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            document.getElementById('tab-' + this.dataset.tab).classList.add('active');
-            if (this.dataset.tab === 'files') renderFileRekap();
-        });
-    });
-
-    // Modal close on overlay click
     document.querySelectorAll('.modal-overlay').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.classList.remove('active');
@@ -2484,6 +3660,7 @@ function init() {
         }
     });
 
+    autoConfigure();
     checkSession();
 }
 
